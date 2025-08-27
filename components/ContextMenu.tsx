@@ -7,6 +7,7 @@ import {
   TrashIcon,
   ArrowDownTrayIcon,
   InformationCircleIcon,
+  CpuChipIcon,
 } from "@heroicons/react/24/outline";
 
 interface FileItem {
@@ -94,24 +95,36 @@ export default function ContextMenu({
       icon: EyeIcon,
       action: "open",
       show: true,
+      gradient: "",
+      borderColor: "",
+      textColor: "text-slate-700 dark:text-slate-200",
     },
     {
       label: "Download",
       icon: ArrowDownTrayIcon,
       action: "download",
       show: item?.type === "file" && item.url,
+      gradient: "",
+      borderColor: "",
+      textColor: "text-slate-700 dark:text-slate-200",
     },
     {
       label: "Copy",
       icon: DocumentDuplicateIcon,
       action: "copy",
       show: true,
+      gradient: "",
+      borderColor: "",
+      textColor: "text-slate-700 dark:text-slate-200",
     },
     {
       label: "Rename",
       icon: PencilIcon,
       action: "rename",
       show: true,
+      gradient: "",
+      borderColor: "",
+      textColor: "text-slate-700 dark:text-slate-200",
     },
     {
       label: "Delete",
@@ -119,12 +132,18 @@ export default function ContextMenu({
       action: "delete",
       show: true,
       danger: true,
+      gradient: "",
+      borderColor: "",
+      textColor: "text-red-600 dark:text-red-300",
     },
     {
       label: "Properties",
       icon: InformationCircleIcon,
       action: "properties",
       show: true,
+      gradient: "",
+      borderColor: "",
+      textColor: "text-slate-700 dark:text-slate-200",
     },
   ];
 
@@ -133,26 +152,30 @@ export default function ContextMenu({
   return (
     <div
       ref={menuRef}
-      className="fixed z-50 bg-white rounded-lg shadow-lg border border-gray-200 py-1 min-w-[160px] animate-fade-in"
+      className="fixed z-50 glass rounded-xl border border-slate-200 dark:border-white/10 py-2 min-w-[200px] context-menu shadow-xl"
       style={{
         left: x,
         top: y,
       }}
     >
       {item && (
-        <div className="px-3 py-2 border-b border-gray-100">
-          <div className="font-medium text-gray-900 truncate text-sm" title={item.name}>
+        <div className="px-4 py-3 border-b border-slate-200 dark:border-white/10">
+          <div
+            className="font-medium text-slate-800 dark:text-white truncate text-sm"
+            title={item.name}
+          >
             {item.name}
           </div>
-          <div className="text-xs text-gray-500 capitalize">
+          <div className="text-xs text-slate-500 dark:text-gray-400 capitalize mt-1 flex items-center">
+            <CpuChipIcon className="h-3 w-3 mr-1" />
             {item.type}
-            {item.size && ` " ${Math.round(item.size / 1024)} KB`}
+            {item.size && ` • ${Math.round(item.size / 1024)} KB`}
           </div>
         </div>
       )}
-      
-      <div className="py-1">
-        {visibleItems.map((menuItem) => {
+
+      <div className="py-2">
+        {visibleItems.map((menuItem, index) => {
           const Icon = menuItem.icon;
           return (
             <button
@@ -161,14 +184,13 @@ export default function ContextMenu({
                 onAction(menuItem.action, item);
                 onClose();
               }}
-              className={`w-full flex items-center px-3 py-2 text-sm transition-colors ${
-                menuItem.danger
-                  ? "text-red-700 hover:bg-red-50"
-                  : "text-gray-700 hover:bg-gray-100"
-              }`}
+              className={`w-full flex items-center px-4 py-3 text-sm transition-colors duration-150 ${menuItem.textColor} hover:bg-slate-100 dark:hover:bg-white/5 group interactive`}
+              style={{
+                animationDelay: `${index * 0.05}s`,
+              }}
             >
-              <Icon className="h-4 w-4 mr-2" />
-              {menuItem.label}
+              <Icon className="h-5 w-5 mr-3" />
+              <span>{menuItem.label}</span>
             </button>
           );
         })}
