@@ -101,7 +101,7 @@ For local development without Docker:
 ### Prerequisites
 
 - Node.js 18+
-- npm or yarn
+- npm
 
 ### Setup
 

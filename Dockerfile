@@ -1,48 +1,54 @@
-# Build stage
-FROM node:20-alpine AS builder
-
+# ---- Base (for shared packages/tools) ----
+FROM node:20-alpine AS base
 WORKDIR /app
+# For next/image (sharp) on Alpine
+RUN apk add --no-cache libc6-compat
 
-# Copy package files
-COPY package.json yarn.lock ./
+# ---- Deps (install full deps for build) ----
+FROM base AS deps
+# Copy lockfile for reproducible installs
+COPY package.json package-lock.json ./
+RUN npm ci
 
-# Install dependencies
-RUN yarn install --frozen-lockfile
-
-# Copy source code
+# ---- Builder (build Next.js) ----
+FROM base AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+# Copy the rest of the source
 COPY . .
-
-# Build the application
+# Build the app
 RUN npm run build
 
-# Production stage  
+# ---- Runner (production image) ----
 FROM node:20-alpine AS runner
-
 WORKDIR /app
+RUN apk add --no-cache libc6-compat
 
-# Add non-root user
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
+# Create non-root user
+RUN addgroup --system --gid 1001 nodejs \
+  && adduser --system --uid 1001 nextjs
 
-# Copy package files and install production dependencies
-COPY package.json yarn.lock ./
-RUN yarn install --production --frozen-lockfile && yarn cache clean
+# Copy only what's needed to run
+COPY --chown=nextjs:nodejs package.json package-lock.json ./
+# Install production deps only
+RUN npm ci --omit=dev --ignore-scripts && npm cache clean --force
 
-# Copy built application
+# Copy built assets
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
 
-# Create storage mount point
+# Storage mount point (matches your compose volume)
 RUN mkdir -p /mnt/storage && chown nextjs:nodejs /mnt/storage
 
-# Set environment variables
+# Environment
 ENV NODE_ENV=production
 ENV PORT=3000
-ENV HOSTNAME="0.0.0.0"
+ENV HOSTNAME=0.0.0.0
+# Optional: disable Next telemetry in containers
+ENV NEXT_TELEMETRY_DISABLED=1
 
-# Switch to non-root user
 USER nextjs
-
 EXPOSE 3000
 
+# Ensure your package.json has: "start": "next start -p 3000"
 CMD ["npm", "start"]
