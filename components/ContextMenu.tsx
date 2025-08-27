@@ -8,7 +8,11 @@ import {
   ArrowDownTrayIcon,
   InformationCircleIcon,
   CpuChipIcon,
+  ArrowRightIcon,
+  ShareIcon,
+  MusicalNoteIcon,
 } from "@heroicons/react/24/outline";
+import { isAudioFile } from "@/lib/audio-utils";
 
 interface FileItem {
   name: string;
@@ -91,6 +95,15 @@ export default function ContextMenu({
 
   const menuItems = [
     {
+      label: "Play",
+      icon: MusicalNoteIcon,
+      action: "play",
+      show: item ? isAudioFile(item) : false,
+      gradient: "",
+      borderColor: "",
+      textColor: "text-green-400",
+    },
+    {
       label: item?.type === "dir" ? "Open" : "Preview",
       icon: EyeIcon,
       action: "open",
@@ -121,6 +134,24 @@ export default function ContextMenu({
       label: "Copy",
       icon: DocumentDuplicateIcon,
       action: "copy",
+      show: true,
+      gradient: "",
+      borderColor: "",
+      textColor: "text-slate-200",
+    },
+    {
+      label: "Move",
+      icon: ArrowRightIcon,
+      action: "move",
+      show: true,
+      gradient: "",
+      borderColor: "",
+      textColor: "text-slate-200",
+    },
+    {
+      label: "Share",
+      icon: ShareIcon,
+      action: "share",
       show: true,
       gradient: "",
       borderColor: "",

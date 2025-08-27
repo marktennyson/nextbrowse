@@ -13,6 +13,7 @@ export default function FileItemList({
   onContextMenu,
   onImageClick,
   onFileEdit: _onFileEdit,
+  onAudioPlay: _onAudioPlay,
   onItemClick,
   loadingRef,
   hasMore,
@@ -26,6 +27,7 @@ export default function FileItemList({
   onContextMenu: (e: React.MouseEvent, item?: FileItem) => void;
   onImageClick?: (item: FileItem) => void;
   onFileEdit?: (item: FileItem) => void;
+  onAudioPlay?: (item: FileItem) => void;
   onItemClick: (
     item: FileItem,
     isSelected: boolean,

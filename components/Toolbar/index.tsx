@@ -8,6 +8,7 @@ import SelectionActions from "./SelectionActions";
 import ViewModeToggle from "./ViewModeToggle";
 import SortControl from "./SortControl";
 import HiddenFilesToggle from "./HiddenFilesToggle";
+import PlayAudioButton from "./PlayAudioButton";
 import Divider from "./Divider";
 
 interface ToolbarProps {
@@ -16,6 +17,8 @@ interface ToolbarProps {
   sortBy: "name" | "kind" | "size" | "date";
   sortOrder: "asc" | "desc";
   showHidden: boolean;
+  audioCount?: number;
+  selectedAudioCount?: number;
   onViewModeChange: (mode: "grid" | "list") => void;
   onSortChange: (
     by: "name" | "kind" | "size" | "date",
@@ -31,6 +34,8 @@ interface ToolbarProps {
   onCreateFolder: (name: string) => void;
   onRefresh: () => void;
   onNavigateUp: () => void;
+  onPlayAllAudio?: () => void;
+  onPlaySelectedAudio?: () => void;
   canNavigateUp: boolean;
 }
 
@@ -40,6 +45,8 @@ export default function Toolbar({
   sortBy,
   sortOrder,
   showHidden,
+  audioCount = 0,
+  selectedAudioCount = 0,
   onViewModeChange,
   onSortChange,
   onToggleHidden,
@@ -52,6 +59,8 @@ export default function Toolbar({
   onCreateFolder,
   onRefresh,
   onNavigateUp,
+  onPlayAllAudio,
+  onPlaySelectedAudio,
   canNavigateUp,
 }: ToolbarProps) {
   return (
@@ -70,6 +79,13 @@ export default function Toolbar({
             <Divider className="mx-0.5 sm:mx-1" />
 
             <CreateFolderButton onCreateFolder={onCreateFolder} />
+
+            <PlayAudioButton
+              audioCount={audioCount}
+              selectedAudioCount={selectedAudioCount}
+              onPlayAll={onPlayAllAudio || (() => {})}
+              onPlaySelected={onPlaySelectedAudio || (() => {})}
+            />
 
             <SelectionActions
               selectedCount={selectedCount}

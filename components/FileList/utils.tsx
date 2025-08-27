@@ -36,6 +36,7 @@ export interface FileListProps {
   onContextMenu: (e: React.MouseEvent, item?: FileItem) => void;
   onImageClick?: (item: FileItem) => void;
   onFileEdit?: (item: FileItem) => void;
+  onAudioPlay?: (item: FileItem) => void;
   loading: boolean;
   hasMore?: boolean;
   onLoadMore?: () => void;
@@ -201,6 +202,14 @@ export function isImageFile(item: FileItem): boolean {
   if (item.type !== "file" || !item.url) return false;
   const ext = item.name.split(".").pop()?.toLowerCase();
   return ["jpg", "jpeg", "png", "gif", "webp", "bmp", "tiff", "svg"].includes(
+    ext || ""
+  );
+}
+
+export function isAudioFile(item: FileItem): boolean {
+  if (item.type !== "file") return false;
+  const ext = item.name.split(".").pop()?.toLowerCase();
+  return ["mp3", "wav", "flac", "ogg", "oga", "m4a", "aac", "wma", "opus"].includes(
     ext || ""
   );
 }

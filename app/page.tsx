@@ -1,11 +1,15 @@
-import { FileManager, FileOperationsProvider } from "@/components/homepage";
+import { FileOperationsProvider } from "@/components/homepage";
+import MusicPlayerProvider from "@/components/MusicPlayerProvider";
+import AppWithMusicPlayer from "@/components/AppWithMusicPlayer";
 import { NextPage } from "next";
 
 const HomePage: NextPage = () => {
   return (
-    <FileOperationsProvider>
-      <FileManager />
-    </FileOperationsProvider>
+    <MusicPlayerProvider>
+      <FileOperationsProvider>
+        <AppWithMusicPlayer />
+      </FileOperationsProvider>
+    </MusicPlayerProvider>
   );
 };
 

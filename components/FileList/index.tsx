@@ -4,7 +4,7 @@ import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
 import FileItemList from "./FileItemList";
 import FileItemGrid from "./FileItemGrid";
 import LoadingSkeleton from "./LoadingSkeleton";
-import { FileItem, FileListProps } from "./utils";
+import { FileItem, FileListProps, isAudioFile } from "./utils";
 
 const FileList: React.FC<FileListProps> = ({
   items,
@@ -17,6 +17,7 @@ const FileList: React.FC<FileListProps> = ({
   onContextMenu,
   onImageClick,
   onFileEdit,
+  onAudioPlay,
   loading,
   hasMore = false,
   onLoadMore,
@@ -72,10 +73,12 @@ const FileList: React.FC<FileListProps> = ({
         // Double click action: open/navigate
         if (item.type === "dir") {
           onNavigate(item.name);
-        } else if (onFileEdit && item.type === "file") {
-          onFileEdit(item);
+        } else if (isAudioFile(item) && onAudioPlay) {
+          onAudioPlay(item);
         } else if (isImageFile(item) && onImageClick) {
           onImageClick(item);
+        } else if (onFileEdit && item.type === "file") {
+          onFileEdit(item);
         } else if (item.url) {
           window.open(item.url, "_blank");
         }
@@ -102,6 +105,7 @@ const FileList: React.FC<FileListProps> = ({
       onNavigate,
       onFileEdit,
       onImageClick,
+      onAudioPlay,
       selectedItems,
       highlightedItem,
       onHighlight,
@@ -144,6 +148,7 @@ const FileList: React.FC<FileListProps> = ({
           onContextMenu={onContextMenu}
           onImageClick={onImageClick}
           onFileEdit={onFileEdit}
+          onAudioPlay={onAudioPlay}
           onItemClick={handleItemClick}
           loadingRef={loadingRef}
           hasMore={hasMore}
@@ -182,6 +187,7 @@ const FileList: React.FC<FileListProps> = ({
         onContextMenu={onContextMenu}
         onImageClick={onImageClick}
         onFileEdit={onFileEdit}
+        onAudioPlay={onAudioPlay}
         onItemClick={handleItemClick}
         loadingRef={loadingRef}
         hasMore={hasMore}

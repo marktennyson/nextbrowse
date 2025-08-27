@@ -41,6 +41,10 @@ interface FileOperationsContextType {
     open: boolean;
     item: FileItem | null;
   };
+  shareDialog: {
+    open: boolean;
+    item: FileItem | null;
+  };
 
   // Dialog handlers
   setMoveCopyDialog: React.Dispatch<
@@ -84,6 +88,12 @@ interface FileOperationsContextType {
       item: FileItem | null;
     }>
   >;
+  setShareDialog: React.Dispatch<
+    React.SetStateAction<{
+      open: boolean;
+      item: FileItem | null;
+    }>
+  >;
 
   // Utility handlers
   handleContextMenu: (e: React.MouseEvent, item?: FileItem) => void;
@@ -95,6 +105,8 @@ interface FileOperationsContextType {
   closeRenameDialog: () => void;
   openPropertiesDialog: (item: FileItem) => void;
   closePropertiesDialog: () => void;
+  openShareDialog: (item: FileItem) => void;
+  closeShareDialog: () => void;
 }
 
 const FileOperationsContext = createContext<FileOperationsContextType | undefined>(undefined);
@@ -144,6 +156,11 @@ export default function FileOperationsProvider({ children }: FileOperationsProvi
   }>({ open: false, item: null });
 
   const [propertiesDialog, setPropertiesDialog] = useState<{
+    open: boolean;
+    item: FileItem | null;
+  }>({ open: false, item: null });
+
+  const [shareDialog, setShareDialog] = useState<{
     open: boolean;
     item: FileItem | null;
   }>({ open: false, item: null });
@@ -221,6 +238,15 @@ export default function FileOperationsProvider({ children }: FileOperationsProvi
     setPropertiesDialog({ open: false, item: null });
   }, []);
 
+  // Share dialog handlers
+  const openShareDialog = useCallback((item: FileItem) => {
+    setShareDialog({ open: true, item });
+  }, []);
+
+  const closeShareDialog = useCallback(() => {
+    setShareDialog({ open: false, item: null });
+  }, []);
+
   const value: FileOperationsContextType = {
     // Dialog states
     moveCopyDialog,
@@ -229,6 +255,7 @@ export default function FileOperationsProvider({ children }: FileOperationsProvi
     imageViewer,
     renameDialog,
     propertiesDialog,
+    shareDialog,
 
     // Dialog setters
     setMoveCopyDialog,
@@ -237,6 +264,7 @@ export default function FileOperationsProvider({ children }: FileOperationsProvi
     setImageViewer,
     setRenameDialog,
     setPropertiesDialog,
+    setShareDialog,
 
     // Utility handlers
     handleContextMenu,
@@ -248,6 +276,8 @@ export default function FileOperationsProvider({ children }: FileOperationsProvi
     closeRenameDialog,
     openPropertiesDialog,
     closePropertiesDialog,
+    openShareDialog,
+    closeShareDialog,
   };
 
   return (

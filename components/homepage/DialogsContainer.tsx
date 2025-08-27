@@ -4,6 +4,7 @@ import ContextMenu from "@/components/ContextMenu";
 import ImageViewer from "@/components/ImageViewer";
 import RenameDialog from "@/components/RenameDialog";
 import PropertiesDialog from "@/components/PropertiesDialog";
+import ShareDialog from "@/components/ShareDialog";
 
 interface FileItem {
   name: string;
@@ -44,6 +45,10 @@ interface DialogsContainerProps {
     open: boolean;
     item: FileItem | null;
   };
+  shareDialog: {
+    open: boolean;
+    item: FileItem | null;
+  };
 
   // Data
   currentPath: string;
@@ -61,6 +66,19 @@ interface DialogsContainerProps {
   onRenameDialogClose: () => void;
   onRenameConfirm: (newName: string) => Promise<void>;
   onPropertiesDialogClose: () => void;
+  onShareDialogClose: () => void;
+  onCreateShare: (shareData: {
+    path: string;
+    password?: string;
+    expiresIn?: number;
+    allowUploads?: boolean;
+    disableViewer?: boolean;
+    quickDownload?: boolean;
+    title?: string;
+    description?: string;
+    theme?: string;
+    viewMode?: 'list' | 'grid';
+  }) => Promise<{ shareId: string; shareUrl: string } | null>;
 }
 
 export default function DialogsContainer({
@@ -70,6 +88,7 @@ export default function DialogsContainer({
   imageViewer,
   renameDialog,
   propertiesDialog,
+  shareDialog,
   currentPath,
   filteredItems,
   onMoveCopyClose,
@@ -83,6 +102,8 @@ export default function DialogsContainer({
   onRenameDialogClose,
   onRenameConfirm,
   onPropertiesDialogClose,
+  onShareDialogClose,
+  onCreateShare,
 }: DialogsContainerProps) {
   return (
     <>
@@ -132,6 +153,17 @@ export default function DialogsContainer({
         item={propertiesDialog.item}
         path={currentPath}
         onClose={onPropertiesDialogClose}
+      />
+
+      <ShareDialog
+        open={shareDialog.open}
+        item={shareDialog.item ? {
+          name: shareDialog.item.name,
+          type: shareDialog.item.type,
+          path: `${currentPath}/${shareDialog.item.name}`.replace(/\/+/g, "/")
+        } : undefined}
+        onClose={onShareDialogClose}
+        onCreateShare={onCreateShare}
       />
     </>
   );

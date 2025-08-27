@@ -13,6 +13,8 @@ import EmptyState from "./EmptyState";
 import LoadingSpinner from "./LoadingSpinner";
 import DialogsContainer from "./DialogsContainer";
 import { useFileOperations } from "./FileOperationsProvider";
+import { useMusicPlayer } from "@/components/MusicPlayerProvider";
+import { isAudioFile } from "@/lib/audio-utils";
 
 interface FileItem {
   name: string;
@@ -69,6 +71,7 @@ export default function FileManager() {
     imageViewer,
     renameDialog,
     propertiesDialog,
+    shareDialog,
     setMoveCopyDialog,
     setConfirmDialog,
     handleContextMenu,
@@ -80,7 +83,11 @@ export default function FileManager() {
     closeRenameDialog,
     openPropertiesDialog,
     closePropertiesDialog,
+    openShareDialog,
+    closeShareDialog,
   } = useFileOperations();
+
+  const { playTrack, playFromSelection, playFolder } = useMusicPlayer();
 
   // Load directory contents with infinite scroll
   const loadDirectory = useCallback(async (path: string, reset: boolean = false, offset: number = 0) => {
@@ -212,6 +219,12 @@ export default function FileManager() {
       return sortOrder === "asc" ? comparison : -comparison;
     });
 
+  // Count audio files
+  const audioFiles = filteredItems.filter(isAudioFile);
+  const selectedAudioFiles = Array.from(selectedItems)
+    .map(name => filteredItems.find(item => item.name === name))
+    .filter((item): item is FileItem => item !== undefined && isAudioFile(item));
+
   const selectAll = useCallback(() => {
     setSelectedItems(new Set(filteredItems.map((item) => item.name)));
   }, [filteredItems]);
@@ -219,6 +232,30 @@ export default function FileManager() {
   const clearSelection = useCallback(() => {
     setSelectedItems(new Set());
   }, []);
+
+  // Audio playback handlers
+  const handlePlayAllAudio = useCallback(() => {
+    if (audioFiles.length > 0) {
+      playFolder(audioFiles, currentPath);
+    }
+  }, [audioFiles, currentPath, playFolder]);
+
+  const handlePlaySelectedAudio = useCallback(() => {
+    if (selectedAudioFiles.length > 0) {
+      playFromSelection(selectedAudioFiles, currentPath);
+    }
+  }, [selectedAudioFiles, currentPath, playFromSelection]);
+
+  // Handle double-click on audio file
+  const handleAudioPlay = useCallback((item: FileItem) => {
+    const audioTrack = {
+      name: item.name.replace(/\.[^/.]+$/, ""),
+      url: item.url || `${currentPath}/${item.name}`.replace(/\/+/g, "/"),
+      path: `${currentPath}/${item.name}`.replace(/\/+/g, "/"),
+      duration: undefined,
+    };
+    playTrack(audioTrack, filteredItems, currentPath);
+  }, [currentPath, filteredItems, playTrack]);
 
   // File operations
   const deleteSelected = useCallback(async () => {
@@ -459,6 +496,45 @@ export default function FileManager() {
     [renameDialog.item, currentPath, loadDirectory, closeRenameDialog]
   );
 
+  // Create share handler
+  const handleCreateShare = useCallback(
+    async (shareData: {
+      path: string;
+      password?: string;
+      expiresIn?: number;
+      allowUploads?: boolean;
+      disableViewer?: boolean;
+      quickDownload?: boolean;
+      title?: string;
+      description?: string;
+      theme?: string;
+      viewMode?: 'list' | 'grid';
+    }) => {
+      try {
+        const response = await fetch("/api/fs/share/create", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(shareData),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || "Failed to create share");
+        }
+
+        const data = await response.json();
+        return {
+          shareId: data.shareId,
+          shareUrl: data.shareUrl,
+        };
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to create share");
+        return null;
+      }
+    },
+    []
+  );
+
   // File edit handler
   const handleFileEdit = useCallback(
     (item: FileItem) => {
@@ -479,6 +555,18 @@ export default function FileManager() {
 
       try {
         switch (action) {
+          case "play":
+            if (isAudioFile(item)) {
+              const audioTrack = {
+                name: item.name.replace(/\.[^/.]+$/, ""),
+                url: item.url || itemPath,
+                path: itemPath,
+                duration: undefined,
+              };
+              playTrack(audioTrack, filteredItems, currentPath);
+            }
+            break;
+
           case "open":
             if (item.type === "dir") {
               navigate(item.name);
@@ -509,6 +597,14 @@ export default function FileManager() {
             setMoveCopyDialog({
               open: true,
               mode: "copy",
+              items: [item.name],
+            });
+            break;
+
+          case "move":
+            setMoveCopyDialog({
+              open: true,
+              mode: "move",
               items: [item.name],
             });
             break;
@@ -546,6 +642,10 @@ export default function FileManager() {
             openPropertiesDialog(item);
             break;
 
+          case "share":
+            openShareDialog(item);
+            break;
+
           default:
             break;
         }
@@ -562,7 +662,10 @@ export default function FileManager() {
       setConfirmDialog,
       loadDirectory,
       openPropertiesDialog,
+      openShareDialog,
       closeContextMenu,
+      playTrack,
+      filteredItems,
     ]
   ); // Show loading spinner if initial load
   if (loading && allItems.length === 0) {
@@ -587,6 +690,8 @@ export default function FileManager() {
           sortBy={sortBy}
           sortOrder={sortOrder}
           showHidden={showHidden}
+          audioCount={audioFiles.length}
+          selectedAudioCount={selectedAudioFiles.length}
           onViewModeChange={setViewMode}
           onSortChange={(by: string, order: string) => {
             setSortBy(by as "name" | "kind" | "size" | "date");
@@ -631,6 +736,8 @@ export default function FileManager() {
           onCreateFolder={(name: string) => createFolder(name)}
           onRefresh={() => loadDirectory(currentPath, true, 0)}
           onNavigateUp={navigateUp}
+          onPlayAllAudio={handlePlayAllAudio}
+          onPlaySelectedAudio={handlePlaySelectedAudio}
           canNavigateUp={currentPath !== "/"}
         />
 
@@ -656,6 +763,7 @@ export default function FileManager() {
             onContextMenu={handleContextMenu}
             onImageClick={(item) => openImageViewer(item, filteredItems)}
             onFileEdit={handleFileEdit}
+            onAudioPlay={handleAudioPlay}
             loading={loading}
             hasMore={hasMore && !searchQuery}
             onLoadMore={loadMoreItems}
@@ -675,6 +783,7 @@ export default function FileManager() {
         imageViewer={imageViewer}
         renameDialog={renameDialog}
         propertiesDialog={propertiesDialog}
+        shareDialog={shareDialog}
         currentPath={currentPath}
         filteredItems={filteredItems}
         onMoveCopyClose={() =>
@@ -705,6 +814,8 @@ export default function FileManager() {
         onRenameDialogClose={closeRenameDialog}
         onRenameConfirm={handleRename}
         onPropertiesDialogClose={closePropertiesDialog}
+        onShareDialogClose={closeShareDialog}
+        onCreateShare={handleCreateShare}
       />
     </div>
   );
