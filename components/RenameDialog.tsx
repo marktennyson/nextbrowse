@@ -130,32 +130,31 @@ export default function RenameDialog({
     >
       <div
         className="relative w-full max-w-md rounded-2xl shadow-2xl
-                   border border-zinc-200/60 bg-white/90
-                   dark:border-zinc-800/60 dark:bg-zinc-900/90"
+                   border border-zinc-800/60 bg-zinc-900/90"
         onMouseDown={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-200/60 dark:border-zinc-800/60">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-800/60">
           <div className="flex items-center gap-3">
             {itemType === "dir" ? (
-              <FolderIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+              <FolderIcon className="h-6 w-6 text-blue-400" />
             ) : (
-              <DocumentIcon className="h-6 w-6 text-zinc-600 dark:text-zinc-300" />
+              <DocumentIcon className="h-6 w-6 text-zinc-300" />
             )}
             <h2
               id="rename-title"
-              className="text-lg font-semibold text-zinc-900 dark:text-zinc-100"
+              className="text-lg font-semibold text-zinc-100"
             >
               Rename {itemType === "dir" ? "Folder" : "File"}
             </h2>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+            className="p-2 rounded-xl hover:bg-zinc-800 transition-colors"
             aria-label="Close rename dialog"
             title="Close"
           >
-            <XMarkIcon className="h-5 w-5 text-zinc-600 dark:text-zinc-300" />
+            <XMarkIcon className="h-5 w-5 text-zinc-300" />
           </button>
         </div>
 
@@ -163,7 +162,7 @@ export default function RenameDialog({
         <form onSubmit={handleSubmit} className="px-5 py-4">
           <p
             id="rename-desc"
-            className="text-xs text-zinc-600 dark:text-zinc-400 mb-3"
+            className="text-xs text-zinc-400 mb-3"
           >
             Choose a new name. Avoid characters:{" "}
             <code>&lt; &gt; : &quot; / \ | ? *</code>
@@ -171,7 +170,7 @@ export default function RenameDialog({
 
           <label
             htmlFor="rename-input"
-            className="block text-sm font-medium text-zinc-800 dark:text-zinc-200 mb-2"
+            className="block text-sm font-medium text-zinc-200 mb-2"
           >
             New name
           </label>
@@ -189,9 +188,9 @@ export default function RenameDialog({
               onKeyDown={handleKeyDown}
               placeholder={itemName}
               // borderless look, clean focus ring, works in dark mode
-              className="w-full rounded-xl bg-zinc-100/70 dark:bg-zinc-800/70
-                         px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100
-                         placeholder:text-zinc-400 dark:placeholder:text-zinc-500
+              className="w-full rounded-xl bg-zinc-800/70
+                         px-3 py-2 text-sm text-zinc-100
+                         placeholder:text-zinc-500
                          outline-none focus:ring-2 focus:ring-blue-500/50 shadow-inner"
               aria-invalid={!validation.ok || !!error}
               aria-describedby={
@@ -202,7 +201,7 @@ export default function RenameDialog({
               spellCheck={false}
             />
             {itemType === "file" && ext && (
-              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-zinc-500 dark:text-zinc-400 select-none">
+              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-zinc-400 select-none">
                 {lockExtension ? ext : ""}
               </span>
             )}
@@ -210,17 +209,17 @@ export default function RenameDialog({
 
           {/* Extension lock (files only) */}
           {itemType === "file" && (
-            <label className="mt-3 flex items-center gap-2 text-xs text-zinc-600 dark:text-zinc-400 select-none">
+            <label className="mt-3 flex items-center gap-2 text-xs text-zinc-400 select-none">
               <input
                 type="checkbox"
-                className="h-4 w-4 rounded border-zinc-300 dark:border-zinc-700"
+                className="h-4 w-4 rounded border-zinc-700"
                 checked={lockExtension}
                 onChange={(e) => setLockExtension(e.target.checked)}
               />
               <ShieldCheckIcon className="h-4 w-4" />
               Lock file extension
               {ext ? (
-                <span className="font-mono text-[11px] text-zinc-500 dark:text-zinc-500">
+                <span className="font-mono text-[11px] text-zinc-500">
                   ({ext})
                 </span>
               ) : null}
@@ -236,7 +235,7 @@ export default function RenameDialog({
             ) : !validation.ok ? (
               <p
                 id="rename-error"
-                className="text-sm text-amber-600 dark:text-amber-500"
+                className="text-sm text-amber-500"
               >
                 {validation.message}
               </p>
@@ -246,13 +245,12 @@ export default function RenameDialog({
           </div>
 
           {/* Footer */}
-          <div className="mt-2 flex items-center justify-end gap-2 border-t border-zinc-200/60 dark:border-zinc-800/60 pt-4">
+          <div className="mt-2 flex items-center justify-end gap-2 border-t border-zinc-800/60 pt-4">
             <button
               type="button"
               onClick={onClose}
               className="px-4 py-2 rounded-xl text-sm font-medium
-                         border border-zinc-200/60 bg-white/70 hover:bg-zinc-50
-                         dark:border-zinc-800/60 dark:bg-zinc-900/70 dark:hover:bg-zinc-800 transition-colors"
+                         border border-zinc-800/60 bg-zinc-900/70 hover:bg-zinc-800 transition-colors"
             >
               Cancel
             </button>
@@ -263,7 +261,7 @@ export default function RenameDialog({
                 ${
                   validation.ok
                     ? "bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-600/20"
-                    : "cursor-not-allowed bg-zinc-200 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-500"
+                    : "cursor-not-allowed bg-zinc-800 text-zinc-500"
                 }`}
             >
               Rename

@@ -25,7 +25,14 @@ WORKDIR /app
 ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/package-lock.json ./package-lock.json
-COPY . .
+# Copy only necessary files for building, not user data
+COPY package.json tsconfig.json next.config.js tailwind.config.js postcss.config.mjs next-env.d.ts ./
+COPY app ./app
+COPY components ./components
+COPY lib ./lib
+COPY hooks ./hooks
+COPY public ./public
+COPY .env* ./
 RUN npm run build
 
 # ---- runner: lean, no npm install ----

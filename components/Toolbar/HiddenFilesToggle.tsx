@@ -16,8 +16,8 @@ export default function HiddenFilesToggle({
       onClick={onToggleHidden}
       className={`group inline-flex items-center px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-md sm:rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 border shadow-sm ${
         showHidden
-          ? "text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-700 hover:bg-amber-100 dark:hover:bg-amber-900/30"
-          : "text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-300 dark:hover:border-gray-500 hover:shadow-md"
+          ? "text-amber-400 bg-amber-900/20 border-amber-700 hover:bg-amber-900/30"
+          : "text-gray-400 bg-gray-800 border-gray-600 hover:text-gray-200 hover:bg-gray-700 hover:border-gray-500 hover:shadow-md"
       }`}
       title={showHidden ? "Hide hidden files" : "Show hidden files"}
     >

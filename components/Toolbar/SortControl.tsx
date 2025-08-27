@@ -6,7 +6,7 @@ import {
   ChevronUpDownIcon,
 } from "@heroicons/react/24/outline";
 
-type SortBy = "name" | "type" | "size" | "date";
+type SortBy = "name" | "kind" | "size" | "date";
 type SortOrder = "asc" | "desc";
 
 interface SortControlProps {
@@ -71,7 +71,7 @@ export default function SortControl({
     return () => document.removeEventListener("mousedown", onDocMouseDown);
   }, [showSortMenu]);
 
-  const sortOptions: SortBy[] = ["name", "type", "size", "date"];
+  const sortOptions: SortBy[] = ["name", "kind", "size", "date"];
 
   return (
     <div className="relative" ref={containerRef}>
@@ -79,7 +79,7 @@ export default function SortControl({
         ref={triggerRef}
         type="button"
         onClick={() => setShowSortMenu((s) => !s)}
-        className="group inline-flex items-center px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-md sm:rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-300 dark:hover:border-gray-500 shadow-sm hover:shadow-md"
+        className="group inline-flex items-center px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-md sm:rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 text-slate-200 bg-slate-800 border border-slate-600 hover:bg-slate-700 hover:border-slate-500 shadow-sm hover:shadow-md"
         aria-haspopup="menu"
         aria-expanded={showSortMenu}
         aria-controls="sort-menu-portal"
@@ -96,10 +96,10 @@ export default function SortControl({
             id="sort-menu-portal"
             role="menu"
             style={{ position: "fixed", top: menuPos.top, left: menuPos.left }}
-            className="w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl shadow-2xl backdrop-blur-xl z-[9999]"
+            className="w-48 bg-slate-800 border border-slate-600 rounded-xl shadow-2xl backdrop-blur-xl z-[9999]"
           >
             <div className="p-2">
-              <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider px-3 py-2 border-b border-gray-100 dark:border-gray-700 mb-1">
+              <div className="text-xs font-medium text-slate-400 uppercase tracking-wider px-3 py-2 border-b border-slate-700 mb-1">
                 Sort by
               </div>
               {sortOptions.map((option) => {
@@ -117,8 +117,8 @@ export default function SortControl({
                     }}
                     className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-all duration-150 mb-1 flex items-center justify-between ${
                       isActive
-                        ? "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30"
-                        : "text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                        ? "text-blue-400 bg-blue-900/30"
+                        : "text-slate-300 hover:text-slate-100 hover:bg-slate-700/50"
                     }`}
                     role="menuitemradio"
                     aria-checked={isActive}

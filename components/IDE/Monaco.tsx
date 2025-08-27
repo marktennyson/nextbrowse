@@ -1,7 +1,6 @@
 "use client";
 
 import { Editor } from "@monaco-editor/react";
-import { useTheme } from "next-themes";
 import { useRef, useEffect } from "react";
 import type { editor } from "monaco-editor";
 
@@ -22,35 +21,29 @@ export default function Monaco({
   onMount,
   readOnly = false,
 }: MonacoProps) {
-  const { resolvedTheme } = useTheme();
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
 
-  // Force theme update when resolvedTheme changes
+  // Force theme to dark
   useEffect(() => {
     if (editorRef.current) {
-      const theme =
-        resolvedTheme === "dark" ? "vs-dark-custom" : "vs-light-custom";
-      // Use the monaco editor API to set theme
       const monaco = (
         window as typeof window & { monaco?: typeof import("monaco-editor") }
       ).monaco;
       if (monaco) {
-        monaco.editor.setTheme(theme);
+        monaco.editor.setTheme("vs-dark-custom");
       }
     }
-  }, [resolvedTheme]);
+  }, []);
 
   const handleEditorDidMount = (editor: editor.IStandaloneCodeEditor) => {
     editorRef.current = editor;
 
-    // Set the correct theme immediately after mount
-    const theme =
-      resolvedTheme === "dark" ? "vs-dark-custom" : "vs-light-custom";
+    // Set dark theme immediately after mount
     const monaco = (
       window as typeof window & { monaco?: typeof import("monaco-editor") }
     ).monaco;
     if (monaco) {
-      monaco.editor.setTheme(theme);
+      monaco.editor.setTheme("vs-dark-custom");
     }
 
     // Configure editor options
@@ -147,7 +140,7 @@ export default function Monaco({
       language={language}
       value={value}
       onChange={onChange}
-      theme={resolvedTheme === "dark" ? "vs-dark-custom" : "vs-light-custom"}
+      theme="vs-dark-custom"
       onMount={handleEditorDidMount}
       beforeMount={beforeMount}
       options={{

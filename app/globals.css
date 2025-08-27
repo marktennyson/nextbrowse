@@ -1,52 +1,27 @@
 @import "tailwindcss";
 
 :root {
-  /* Light theme - Clean and modern with better contrast */
-  --background: #ffffff;
-  --foreground: #0f172a; /* slate-900 for maximum readability */
-  --primary: #2563eb; /* blue-600 */
-  --secondary: #7c3aed; /* violet-600 */
-  --accent: #db2777; /* pink-600 */
-  --success: #16a34a; /* green-600 */
-  --warning: #d97706; /* amber-600 */
-  --error: #dc2626; /* red-600 */
-  --surface: #f8fafc; /* slate-50 */
-  --surface-elevated: #f1f5f9; /* slate-100 */
-  --surface-hover: #e2e8f0; /* slate-200 */
-  --border: #cbd5e1; /* slate-300 for better visibility */
-  --border-light: #e2e8f0; /* slate-200 */
-  --text-primary: #0f172a; /* slate-900 */
-  --text-secondary: #475569; /* slate-600 */
-  --text-muted: #64748b; /* slate-500 */
-  --glass-bg: rgba(255, 255, 255, 0.95);
-  --glass-border: rgba(203, 213, 225, 0.8);
-  --hover-bg: rgba(241, 245, 249, 0.8);
-  --selected-bg: rgba(37, 99, 235, 0.1);
-  --selected-border: rgba(37, 99, 235, 0.4);
-}
-
-.dark {
-  --background: #0b0c0e;
-  --foreground: #e5e7eb;
-  --primary: #7dd3fc;
-  --secondary: #a78bfa;
-  --accent: #f472b6;
-  --success: #34d399;
-  --warning: #fbbf24;
-  --error: #f87171;
-  --surface: #111318;
-  --surface-elevated: #161a20;
-  --surface-hover: #1f2937;
-  --border: rgba(255, 255, 255, 0.08);
-  --border-light: rgba(255, 255, 255, 0.05);
-  --text-primary: #e5e7eb;
-  --text-secondary: #9ca3af;
-  --text-muted: #6b7280;
-  --glass-bg: rgba(0, 0, 0, 0.25);
-  --glass-border: rgba(255, 255, 255, 0.06);
-  --hover-bg: rgba(255, 255, 255, 0.06);
-  --selected-bg: rgba(125, 211, 252, 0.15);
-  --selected-border: rgba(125, 211, 252, 0.35);
+  --background: #0a0a0a; /* neutral-950 */
+  --foreground: #fafaf9; /* stone-50 */
+  --primary: #60a5fa; /* blue-400 */
+  --secondary: #fb923c; /* orange-400 */
+  --accent: #f472b6; /* pink-400 */
+  --success: #4ade80; /* green-400 */
+  --warning: #fbbf24; /* amber-400 */
+  --error: #f87171; /* red-400 */
+  --surface: #171717; /* neutral-900 */
+  --surface-elevated: #262626; /* neutral-800 */
+  --surface-hover: #404040; /* neutral-700 */
+  --border: rgba(245, 245, 244, 0.1);
+  --border-light: rgba(245, 245, 244, 0.06);
+  --text-primary: #fafaf9; /* stone-50 */
+  --text-secondary: #d6d3d1; /* stone-300 */
+  --text-muted: #a8a29e; /* stone-400 */
+  --glass-bg: rgba(10, 10, 10, 0.8);
+  --glass-border: rgba(245, 245, 244, 0.08);
+  --hover-bg: rgba(245, 245, 244, 0.05);
+  --selected-bg: rgba(96, 165, 250, 0.12);
+  --selected-border: rgba(96, 165, 250, 0.3);
 }
 
 /* CSS Custom Properties */
@@ -79,7 +54,7 @@ body {
   animation: spin 1s linear infinite;
 }
 
-/* Custom scrollbar - theme aware */
+/* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -99,32 +74,11 @@ body {
   background: var(--text-secondary);
 }
 
-/* Light mode scrollbar adjustments */
-:root:not(.dark) ::-webkit-scrollbar-thumb {
-  background: #cbd5e1; /* slate-300 */
-}
-
-:root:not(.dark) ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8; /* slate-400 */
-}
 
 .glass {
-  background: var(--glass-bg);
-  backdrop-filter: blur(8px);
-  border: 1px solid var(--glass-border);
-}
-
-/* Theme-aware glass effects */
-:root:not(.dark) .glass {
-  background: rgba(255, 255, 255, 0.95);
-  border: 1px solid rgba(203, 213, 225, 0.8);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.08);
-}
-
-.dark .glass {
-  background: rgba(0, 0, 0, 0.25);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(10, 10, 10, 0.8);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(245, 245, 244, 0.08);
 }
 
 /* Remove neon glow effects */
@@ -143,10 +97,6 @@ body {
   cursor: pointer;
 }
 
-.interactive:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
-}
 
 /* Grid pattern (very subtle, if used) */
 .grid-pattern {
@@ -167,7 +117,7 @@ body {
   content: none !important;
 }
 
-/* File type color coding - theme aware */
+/* File type color coding */
 .file-icon-folder {
   color: var(--primary);
 }
@@ -200,57 +150,9 @@ body {
   color: var(--text-secondary);
 }
 
-/* Light theme specific icon adjustments */
-:root:not(.dark) .file-icon-default {
-  color: #64748b; /* slate-500 for better visibility */
-}
 
-:root:not(.dark) .file-icon-folder {
-  color: #1d4ed8; /* blue-700 */
-}
 
-:root:not(.dark) .file-icon-image {
-  color: #15803d; /* green-700 */
-}
-
-:root:not(.dark) .file-icon-video {
-  color: #6d28d9; /* violet-700 */
-}
-
-:root:not(.dark) .file-icon-audio {
-  color: #be185d; /* pink-700 */
-}
-
-:root:not(.dark) .file-icon-code {
-  color: #b45309; /* amber-700 */
-}
-
-:root:not(.dark) .file-icon-archive {
-  color: #c2410c; /* orange-700 */
-}
-
-:root:not(.dark) .file-icon-document {
-  color: #0e7490; /* cyan-700 */
-}
-
-/* Light theme text visibility fixes */
-:root:not(.dark) .text-slate-800 {
-  color: #1e293b !important; /* slate-800 */
-}
-
-:root:not(.dark) .text-slate-700 {
-  color: #334155 !important; /* slate-700 */
-}
-
-:root:not(.dark) .text-slate-600 {
-  color: #475569 !important; /* slate-600 */
-}
-
-:root:not(.dark) .text-slate-500 {
-  color: #64748b !important; /* slate-500 */
-}
-
-/* File selection styles - theme aware with enhanced feedback */
+/* File selection styles with enhanced feedback */
 .file-item-selected {
   background: var(--selected-bg);
   border: 2px solid var(--selected-border);
@@ -275,30 +177,19 @@ body {
   background: var(--hover-bg);
   border-color: var(--border);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.dark .file-item-hover {
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
 }
 
 /* Enhanced interactive hover effects with smoother transitions */
 .interactive:hover {
   transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .interactive:active {
   transform: translateY(0);
   transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-:root:not(.dark) .interactive:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.dark .interactive:hover {
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
 }
 
 /* Add subtle animations for file items */
@@ -323,8 +214,8 @@ body {
   bottom: -30px;
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(0, 0, 0, 0.8);
-  color: white;
+  background: rgba(255, 255, 255, 0.9);
+  color: black;
   padding: 4px 8px;
   border-radius: 4px;
   font-size: 0.75rem;
@@ -333,11 +224,6 @@ body {
   pointer-events: none;
   transition: opacity 0.2s ease;
   z-index: 50;
-}
-
-.dark .double-click-hint {
-  background: rgba(255, 255, 255, 0.9);
-  color: black;
 }
 
 .group:hover .double-click-hint {
@@ -414,7 +300,7 @@ body {
   animation-delay: 0.3s;
 }
 
-/* Theme-aware form elements with smoother transitions */
+/* Form elements with smoother transitions */
 button,
 input,
 select,
@@ -422,23 +308,6 @@ textarea {
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Light theme form styles */
-:root:not(.dark) input,
-:root:not(.dark) select,
-:root:not(.dark) textarea {
-  background: white;
-  border: 1px solid var(--border);
-  color: var(--text-primary);
-}
-
-:root:not(.dark) input:focus,
-:root:not(.dark) select:focus,
-:root:not(.dark) textarea:focus {
-  outline: 2px solid var(--primary);
-  outline-offset: 2px;
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
 
 /* Remove default input styling for transparent inputs */
 input.bg-transparent {
@@ -453,57 +322,42 @@ input.bg-transparent:focus {
   box-shadow: none !important;
 }
 
-:root:not(.dark) button {
-  border: 1px solid var(--border);
-  background: white;
-  color: var(--text-primary);
-}
-
-:root:not(.dark) button:hover {
-  background: var(--surface);
-  border-color: var(--text-secondary);
-}
-
-/* Dark theme form styles */
-.dark input,
-.dark select,
-.dark textarea {
+/* Form styles */
+input,
+select,
+textarea {
   background: var(--surface);
   border: 1px solid var(--border);
   color: var(--text-primary);
 }
 
-.dark input:focus,
-.dark select:focus,
-.dark textarea:focus {
+input:focus,
+select:focus,
+textarea:focus {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
   border-color: var(--primary);
 }
 
-.dark button {
+button {
   border: 1px solid var(--border);
   background: var(--surface);
   color: var(--text-primary);
 }
 
-.dark button:hover {
+button:hover {
   background: var(--surface-hover);
   border-color: var(--text-secondary);
 }
 
-/* Drag and drop styles - theme aware */
+/* Drag and drop styles */
 .drag-over {
   background: var(--selected-bg);
   border: 2px dashed var(--selected-border);
 }
 
-/* Loading animations - theme aware */
-:root:not(.dark) .animate-pulse > div {
-  background: linear-gradient(90deg, #f1f5f9, #e2e8f0, #f1f5f9);
-}
-
-.dark .animate-pulse > div {
+/* Loading animations */
+.animate-pulse > div {
   background: linear-gradient(90deg, #374151, #4b5563, #374151);
 }
 
@@ -517,10 +371,6 @@ input.bg-transparent:focus {
 
 /* Prevent hover styles from overriding blue border */
 .file-item-blue-border:hover {
-  border-color: #3b82f6 !important; /* blue-500 */
-}
-
-.dark .file-item-blue-border:hover {
   border-color: #60a5fa !important; /* blue-400 */
 }
 

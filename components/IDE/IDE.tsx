@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useTheme } from "next-themes";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import type { editor } from "monaco-editor";
@@ -35,7 +34,6 @@ export default function IDE({
   className = "",
 }: IDEProps) {
   const router = useRouter();
-  const { setTheme, resolvedTheme } = useTheme();
   const [openFiles, setOpenFiles] = useState<Record<string, OpenFile>>({});
   const [activeFile, setActiveFile] = useState<string | null>(null);
   const [sidebarWidth, setSidebarWidth] = useState(240);
@@ -263,35 +261,29 @@ export default function IDE({
 
   return (
     <div
-      className={`h-full flex flex-col bg-gray-50 dark:bg-gray-900 ${className}`}
+      className={`h-full flex flex-col bg-gray-900 ${className}`}
     >
       {/* Header with theme toggle */}
-      <div className="h-8 bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-3">
+      <div className="h-8 bg-gray-800 border-b border-gray-700 flex items-center justify-between px-3">
         <div className="flex items-center space-x-3">
           <button
             onClick={() => router.push("/")}
-            className="text-xs px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600 flex items-center space-x-1"
+            className="text-xs px-2 py-1 bg-gray-700 rounded hover:bg-gray-600 flex items-center space-x-1"
             title="Back to Files"
           >
             <ArrowLeftIcon className="h-3 w-3" />
             <span>Files</span>
           </button>
-          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+          <span className="text-sm font-medium text-gray-300">
             NextBrowse IDE
           </span>
         </div>
-        <button
-          onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
-          className="text-xs px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600"
-        >
-          {resolvedTheme === "dark" ? "🌞" : "🌙"}
-        </button>
       </div>
 
       <div className="flex-1 flex">
         {/* Sidebar */}
         <div
-          className="bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700"
+          className="bg-gray-800 border-r border-gray-700"
           style={{ width: sidebarWidth }}
         >
           <FileTree
@@ -315,7 +307,7 @@ export default function IDE({
 
         {/* Resize handle */}
         <div
-          className="w-1 bg-gray-200 dark:bg-gray-700 cursor-col-resize hover:bg-blue-500 dark:hover:bg-blue-600 transition-colors"
+          className="w-1 bg-gray-700 cursor-col-resize hover:bg-blue-600 transition-colors"
           onMouseDown={handleMouseDown}
         />
 
@@ -323,7 +315,7 @@ export default function IDE({
         <div className="flex-1 flex flex-col">
           {/* Tabs */}
           {Object.keys(openFiles).length > 0 && (
-            <div className="flex bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 overflow-x-auto">
+            <div className="flex bg-gray-800 border-b border-gray-700 overflow-x-auto">
               {Object.entries(openFiles).map(([path, file]) => (
                 <FileTab
                   key={path}
@@ -350,7 +342,7 @@ export default function IDE({
                 onMount={handleEditorMount}
               />
             ) : (
-              <div className="h-full flex items-center justify-center text-gray-500 dark:text-gray-400">
+              <div className="h-full flex items-center justify-center text-gray-400">
                 <div className="text-center">
                   <div className="text-6xl mb-4">📁</div>
                   <p className="text-lg font-medium">

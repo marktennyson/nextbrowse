@@ -11,7 +11,9 @@
   "dependencies": {
     "@heroicons/react": "^2.2.0",
     "@monaco-editor/react": "^4.7.0",
+    "@types/archiver": "^6.0.3",
     "@types/busboy": "^1.5.4",
+    "archiver": "^7.0.1",
     "busboy": "1.6.0",
     "framer-motion": "^12.23.12",
     "monaco-editor": "^0.52.2",

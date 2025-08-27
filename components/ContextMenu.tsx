@@ -97,7 +97,7 @@ export default function ContextMenu({
       show: true,
       gradient: "",
       borderColor: "",
-      textColor: "text-slate-700 dark:text-slate-200",
+      textColor: "text-slate-200",
     },
     {
       label: "Open with IDE",
@@ -106,16 +106,16 @@ export default function ContextMenu({
       show: item?.type === "dir",
       gradient: "",
       borderColor: "",
-      textColor: "text-slate-700 dark:text-slate-200",
+      textColor: "text-slate-200",
     },
     {
-      label: "Download",
+      label: item?.type === "dir" ? "Download ZIP" : "Download",
       icon: ArrowDownTrayIcon,
       action: "download",
-      show: item?.type === "file" && item.url,
+      show: true, // Show for both files and directories
       gradient: "",
       borderColor: "",
-      textColor: "text-slate-700 dark:text-slate-200",
+      textColor: "text-slate-200",
     },
     {
       label: "Copy",
@@ -124,7 +124,7 @@ export default function ContextMenu({
       show: true,
       gradient: "",
       borderColor: "",
-      textColor: "text-slate-700 dark:text-slate-200",
+      textColor: "text-slate-200",
     },
     {
       label: "Rename",
@@ -133,7 +133,7 @@ export default function ContextMenu({
       show: true,
       gradient: "",
       borderColor: "",
-      textColor: "text-slate-700 dark:text-slate-200",
+      textColor: "text-slate-200",
     },
     {
       label: "Delete",
@@ -143,7 +143,7 @@ export default function ContextMenu({
       danger: true,
       gradient: "",
       borderColor: "",
-      textColor: "text-red-600 dark:text-red-300",
+      textColor: "text-red-300",
     },
     {
       label: "Properties",
@@ -152,7 +152,7 @@ export default function ContextMenu({
       show: true,
       gradient: "",
       borderColor: "",
-      textColor: "text-slate-700 dark:text-slate-200",
+      textColor: "text-slate-200",
     },
   ];
 
@@ -161,21 +161,21 @@ export default function ContextMenu({
   return (
     <div
       ref={menuRef}
-      className="fixed z-50 glass rounded-xl border border-slate-200 dark:border-white/10 py-2 min-w-[200px] context-menu shadow-xl"
+      className="fixed z-50 glass rounded-xl border border-white/10 py-2 min-w-[200px] context-menu shadow-xl"
       style={{
         left: x,
         top: y,
       }}
     >
       {item && (
-        <div className="px-4 py-3 border-b border-slate-200 dark:border-white/10">
+        <div className="px-4 py-3 border-b border-white/10">
           <div
-            className="font-medium text-slate-800 dark:text-white truncate text-sm"
+            className="font-medium text-white truncate text-sm"
             title={item.name}
           >
             {item.name}
           </div>
-          <div className="text-xs text-slate-500 dark:text-gray-400 capitalize mt-1 flex items-center">
+          <div className="text-xs text-slate-400 capitalize mt-1 flex items-center">
             <CpuChipIcon className="h-3 w-3 mr-1" />
             {item.type}
             {item.size && ` • ${Math.round(item.size / 1024)} KB`}
@@ -193,7 +193,7 @@ export default function ContextMenu({
                 onAction(menuItem.action, item);
                 onClose();
               }}
-              className={`w-full flex items-center px-4 py-3 text-sm transition-colors duration-150 ${menuItem.textColor} hover:bg-slate-100 dark:hover:bg-white/5 group interactive`}
+              className={`w-full flex items-center px-4 py-3 text-sm transition-colors duration-150 ${menuItem.textColor} hover:bg-white/5 group interactive`}
               style={{
                 animationDelay: `${index * 0.05}s`,
               }}

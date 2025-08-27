@@ -20,8 +20,8 @@ export default function Breadcrumbs({ path, onNavigate }: BreadcrumbsProps) {
         onClick={() => onNavigate("/")}
         className={`flex items-center px-2 py-1 rounded transition-colors ${
           path === "/"
-            ? "text-slate-800 dark:text-white bg-slate-100 dark:bg-white/15"
-            : "text-slate-600 dark:text-gray-300 hover:text-slate-800 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/10"
+            ? "text-white bg-white/15"
+            : "text-slate-300 hover:text-white hover:bg-white/10"
         }`}
         title="Home"
       >
@@ -37,15 +37,15 @@ export default function Breadcrumbs({ path, onNavigate }: BreadcrumbsProps) {
         return (
           <React.Fragment key={partPath}>
             {/* Separator */}
-            <ChevronRightIcon className="h-3 w-3 text-slate-400 dark:text-gray-500" />
+            <ChevronRightIcon className="h-3 w-3 text-slate-500" />
 
             {/* Path segment */}
             <button
               onClick={() => onNavigate(partPath)}
               className={`px-2 py-1 rounded transition-colors truncate max-w-24 sm:max-w-32 ${
                 isLast
-                  ? "text-slate-800 dark:text-white bg-slate-100 dark:bg-white/15 font-medium"
-                  : "text-slate-600 dark:text-gray-300 hover:text-slate-800 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/10"
+                  ? "text-white bg-white/15 font-medium"
+                  : "text-slate-300 hover:text-white hover:bg-white/10"
               }`}
               title={part}
             >

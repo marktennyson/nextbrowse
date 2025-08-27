@@ -64,47 +64,45 @@ export default function ConfirmDialog({
     >
       <div
         className="w-full max-w-md flex flex-col
-                   rounded-2xl border border-zinc-200/70 bg-white/90 shadow-2xl
-                   dark:border-zinc-800/70 dark:bg-zinc-900/90"
+                   rounded-2xl border border-zinc-800/70 bg-zinc-900/90 shadow-2xl"
       >
         {/* Header */}
-        <div className="flex items-center gap-3 px-5 py-4 border-b border-zinc-200/70 dark:border-zinc-800/70">
+        <div className="flex items-center gap-3 px-5 py-4 border-b border-zinc-800/70">
           <div className="flex items-center gap-2">
             <div
               className="h-9 w-9 rounded-xl grid place-items-center
                          bg-gradient-to-br from-red-500/15 to-orange-500/15
-                         ring-1 ring-inset ring-red-500/20 dark:from-red-400/10 dark:to-orange-400/10"
+                         ring-1 ring-inset ring-red-500/20 from-red-400/10 to-orange-400/10"
             >
-              <ExclamationTriangleIcon className="h-5 w-5 text-red-600 dark:text-red-400" />
+              <ExclamationTriangleIcon className="h-5 w-5 text-red-400" />
             </div>
-            <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+            <h3 className="text-lg font-semibold text-zinc-100">
               {title}
             </h3>
           </div>
           <button
             onClick={onClose}
-            className="ml-auto rounded-xl p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+            className="ml-auto rounded-xl p-2 hover:bg-zinc-800 transition-colors"
             aria-label="Close dialog"
             title="Close"
           >
-            <XMarkIcon className="h-6 w-6 text-zinc-600 dark:text-zinc-300" />
+            <XMarkIcon className="h-6 w-6 text-zinc-300" />
           </button>
         </div>
 
         {/* Message */}
         <div className="px-5 py-4">
-          <p className="text-sm text-zinc-600 dark:text-zinc-300">{message}</p>
+          <p className="text-sm text-zinc-300">{message}</p>
         </div>
 
         {/* Actions */}
-        <div className="px-5 py-4 border-t border-zinc-200/70 dark:border-zinc-800/70 bg-white/60 dark:bg-zinc-900/60 backdrop-blur">
+        <div className="px-5 py-4 border-t border-zinc-800/70 bg-zinc-900/60 backdrop-blur">
           <div className="flex justify-end gap-2">
             <button
               ref={cancelButtonRef}
               onClick={onClose}
               className="rounded-xl px-4 py-2 text-sm font-medium
-                         border border-zinc-200/70 bg-white/70 hover:bg-zinc-50
-                         dark:border-zinc-800/70 dark:bg-zinc-900/70 dark:hover:bg-zinc-800 transition-colors"
+                         border border-zinc-800/70 bg-zinc-900/70 hover:bg-zinc-800 transition-colors"
             >
               Cancel
             </button>
@@ -117,7 +115,7 @@ export default function ConfirmDialog({
               Confirm
             </button>
           </div>
-          <p className="mt-2 text-[11px] text-zinc-500 dark:text-zinc-400">
+          <p className="mt-2 text-[11px] text-zinc-400">
             Tip: Press{" "}
             <kbd className="rounded border px-1 py-0.5 text-[10px]">Enter</kbd>{" "}
             to confirm,{" "}

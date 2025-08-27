@@ -52,8 +52,8 @@ export default function FileItemGrid({
             key={item.name}
             className={`relative group glass rounded-xl transition-all duration-300 transform hover:scale-[1.02] file-item-no-select ${
               showBlueBorder
-                ? "bg-blue-50 dark:bg-blue-900/30 ring-2 ring-blue-200 dark:ring-blue-700/50 shadow-lg border-2 border-blue-500 dark:border-blue-400 file-item-blue-border"
-                : "border border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20 hover:shadow-md"
+                ? "bg-blue-900/30 ring-2 ring-blue-700/50 shadow-lg border-2 border-blue-400 file-item-blue-border"
+                : "border border-white/10 hover:border-white/20 hover:shadow-md"
             } cursor-pointer interactive file-item-animate`}
             onContextMenu={(e) => onContextMenu(e, item)}
             onClick={(e) => onItemClick(item, isSelected, e)}
@@ -64,7 +64,7 @@ export default function FileItemGrid({
             }}
             style={{ animationDelay: `${index * 0.05}s` }}
           >
-            <div className="pointer-events-none absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-slate-100/50 dark:bg-white/5"></div>
+            <div className="pointer-events-none absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-white/5"></div>
 
             <div className="p-3 sm:p-4 md:p-6 text-center relative z-10 h-full flex flex-col justify-between min-h-[120px] sm:min-h-[140px] md:min-h-[160px]">
               <div className="flex flex-col items-center flex-1">
@@ -90,7 +90,7 @@ export default function FileItemGrid({
                           width={64}
                           height={64}
                           unoptimized
-                          className="h-12 w-12 sm:h-14 sm:w-14 md:h-16 md:w-16 rounded-lg object-cover border border-slate-200 dark:border-white/10 hover:shadow-lg hover:scale-105 transition-all duration-200 cursor-pointer"
+                          className="h-12 w-12 sm:h-14 sm:w-14 md:h-16 md:w-16 rounded-lg object-cover border border-white/10 hover:shadow-lg hover:scale-105 transition-all duration-200 cursor-pointer"
                           onClick={(e) => {
                             e.stopPropagation();
                             if (onImageClick) {
@@ -114,22 +114,22 @@ export default function FileItemGrid({
                     return <IconComponent className={iconClasses} />;
                   })()}
                 </div>
-                <h3 className="text-slate-800 dark:text-slate-200 font-medium text-xs sm:text-sm mb-1 sm:mb-2 truncate group-hover:text-slate-900 dark:group-hover:text-white transition-colors relative w-full">
+                <h3 className="text-slate-200 font-medium text-xs sm:text-sm mb-1 sm:mb-2 truncate group-hover:text-white transition-colors relative w-full">
                   {item.name}
                   <div className="double-click-hint">
                     Double-click to {item.type === "dir" ? "open" : "view"}
                   </div>
                 </h3>
               </div>
-              <div className="text-xs text-slate-500 dark:text-gray-400 space-y-1 hidden sm:block mt-auto">
+              <div className="text-xs text-slate-400 space-y-1 hidden sm:block mt-auto">
                 {item.size && (
                   <div className="flex justify-center">
-                    <span className="px-2 py-1 bg-slate-100 dark:bg-white/5 rounded-full text-xs">
+                    <span className="px-2 py-1 bg-white/5 rounded-full text-xs">
                       {formatFileSize(item.size)}
                     </span>
                   </div>
                 )}
-                <div className="text-slate-500 dark:text-gray-500 text-xs hidden md:block">
+                <div className="text-slate-500 text-xs hidden md:block">
                   {formatDate(item.mtime)}
                 </div>
               </div>
@@ -156,8 +156,8 @@ export default function FileItemGrid({
                       : "opacity-0 group-hover:opacity-100"
                   } ${
                     isSelected
-                      ? "bg-blue-500 dark:bg-blue-600 border-blue-500 dark:border-blue-600 text-white focus:ring-blue-500/20"
-                      : "border-slate-300 dark:border-slate-500 bg-white dark:bg-slate-800 text-blue-500 hover:border-blue-400 dark:hover:border-blue-500 focus:ring-blue-500/20"
+                      ? "bg-blue-600 border-blue-600 text-white focus:ring-blue-500/20"
+                      : "border-slate-500 bg-slate-800 text-blue-500 hover:border-blue-500 focus:ring-blue-500/20"
                   }`}
                 />
                 {isSelected && (
@@ -189,12 +189,12 @@ export default function FileItemGrid({
           {loadingMore ? (
             <div className="flex items-center space-x-2">
               <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-              <span className="text-sm text-slate-500 dark:text-slate-400">
+              <span className="text-sm text-slate-400">
                 Loading more items...
               </span>
             </div>
           ) : hasMore ? (
-            <div className="text-sm text-slate-500 dark:text-slate-400">
+            <div className="text-sm text-slate-400">
               Scroll down to load more
             </div>
           ) : null}

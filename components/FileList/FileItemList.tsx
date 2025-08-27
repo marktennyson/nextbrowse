@@ -42,13 +42,13 @@ export default function FileItemList({
   }
   return (
     <div className="glass rounded-xl overflow-hidden">
-      <div className="hidden sm:grid grid-cols-12 gap-4 p-4 md:p-6 bg-slate-100/80 dark:bg-white/5 border-b border-slate-200 dark:border-white/10 text-sm font-medium text-slate-700 dark:text-slate-200">
+      <div className="hidden sm:grid grid-cols-12 gap-4 p-4 md:p-6 bg-white/5 border-b border-white/10 text-sm font-medium text-slate-200">
         <div className="col-span-6">Name</div>
         <div className="col-span-2 hidden md:block">Type</div>
         <div className="col-span-2 hidden lg:block">Size</div>
         <div className="col-span-2 hidden xl:block">Modified</div>
       </div>
-      <div className="divide-y divide-slate-200 dark:divide-white/5">
+      <div className="divide-y divide-white/5">
         {items.map((item, index) => {
           const isSelected = selectedItems.has(item.name);
           const isHighlighted = highlightedItem === item.name;
@@ -59,8 +59,8 @@ export default function FileItemList({
               key={item.name}
               className={`flex sm:grid sm:grid-cols-12 gap-3 sm:gap-4 p-3 sm:p-4 md:p-6 transition-all duration-300 file-item-no-select min-h-[80px] sm:min-h-[88px] ${
                 showBlueBorder
-                  ? "bg-blue-50 dark:bg-blue-900/30 ring-2 ring-blue-200 dark:ring-blue-700/50 shadow-md border-2 border-blue-500 dark:border-blue-400 file-item-blue-border"
-                  : "hover:bg-slate-50 dark:hover:bg-white/5 hover:shadow-sm border border-transparent hover:border-slate-200 dark:hover:border-white/10"
+                  ? "bg-blue-900/30 ring-2 ring-blue-700/50 shadow-md border-2 border-blue-400 file-item-blue-border"
+                  : "hover:bg-white/5 hover:shadow-sm border border-transparent hover:border-white/10"
               } group cursor-pointer rounded-lg file-item-animate`}
               onContextMenu={(e) => onContextMenu(e, item)}
               onClick={(e) => onItemClick(item, isSelected, e)}
@@ -92,8 +92,8 @@ export default function FileItemList({
                         : "opacity-0 group-hover:opacity-100"
                     } ${
                       isSelected
-                        ? "bg-blue-500 dark:bg-blue-600 border-blue-500 dark:border-blue-600 text-white focus:ring-blue-500/20"
-                        : "border-slate-300 dark:border-slate-500 bg-white dark:bg-slate-800 text-blue-500 hover:border-blue-400 dark:hover:border-blue-500 focus:ring-blue-500/20"
+                        ? "bg-blue-600 border-blue-600 text-white focus:ring-blue-500/20"
+                        : "border-slate-500 bg-slate-800 text-blue-500 hover:border-blue-500 focus:ring-blue-500/20"
                     }`}
                   />
                   {isSelected && (
@@ -134,7 +134,7 @@ export default function FileItemList({
                         width={40}
                         height={40}
                         unoptimized
-                        className="h-8 w-8 sm:h-10 sm:w-10 rounded object-cover border border-slate-200 dark:border-white/10 hover:shadow-lg transition-shadow cursor-pointer"
+                        className="h-8 w-8 sm:h-10 sm:w-10 rounded object-cover border border-white/10 hover:shadow-lg transition-shadow cursor-pointer"
                         onClick={(e) => {
                           e.stopPropagation();
                           if (onImageClick) {
@@ -152,10 +152,10 @@ export default function FileItemList({
                 })()}
 
                 <div className="min-w-0 flex-1 relative">
-                  <div className="font-medium text-slate-800 dark:text-slate-200 group-hover:text-slate-900 dark:group-hover:text-white truncate transition-colors text-sm sm:text-base">
+                  <div className="font-medium text-slate-200 group-hover:text-white truncate transition-colors text-sm sm:text-base">
                     {item.name}
                   </div>
-                  <div className="sm:hidden text-xs text-slate-500 dark:text-gray-400 truncate mt-1">
+                  <div className="sm:hidden text-xs text-gray-400 truncate mt-1">
                     {item.type} •{" "}
                     {item.size ? formatFileSize(item.size) : "N/A"}
                   </div>
@@ -164,13 +164,13 @@ export default function FileItemList({
                   </div>
                 </div>
               </div>
-              <div className="hidden sm:flex sm:col-span-2 md:col-span-2 items-center text-sm text-slate-600 dark:text-gray-300 capitalize">
+              <div className="hidden sm:flex sm:col-span-2 md:col-span-2 items-center text-sm text-gray-300 capitalize">
                 {item.type}
               </div>
-              <div className="hidden lg:flex lg:col-span-2 items-center text-sm text-slate-600 dark:text-gray-300">
+              <div className="hidden lg:flex lg:col-span-2 items-center text-sm text-gray-300">
                 {formatFileSize(item.size)}
               </div>
-              <div className="hidden xl:flex xl:col-span-2 items-center text-sm text-slate-600 dark:text-gray-300">
+              <div className="hidden xl:flex xl:col-span-2 items-center text-sm text-gray-300">
                 {formatDate(item.mtime)}
               </div>
             </div>
@@ -183,12 +183,12 @@ export default function FileItemList({
           {loadingMore ? (
             <div className="flex items-center space-x-2">
               <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-              <span className="text-sm text-slate-500 dark:text-slate-400">
+              <span className="text-sm text-slate-400">
                 Loading more items...
               </span>
             </div>
           ) : hasMore ? (
-            <div className="text-sm text-slate-500 dark:text-slate-400">
+            <div className="text-sm text-slate-400">
               Scroll down to load more
             </div>
           ) : null}

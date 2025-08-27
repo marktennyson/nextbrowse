@@ -50,8 +50,8 @@ export default function FileManager() {
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [highlightedItem, setHighlightedItem] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [sortBy, setSortBy] = useState<"name" | "type" | "size" | "date">(
-    "name"
+  const [sortBy, setSortBy] = useState<"name" | "kind" | "size" | "date">(
+    "kind"
   );
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [searchQuery, setSearchQuery] = useState("");
@@ -192,7 +192,7 @@ export default function FileManager() {
             numeric: true,
           });
           break;
-        case "type":
+        case "kind":
           if (a.type !== b.type) {
             comparison = a.type === "dir" ? -1 : 1;
           } else {
@@ -244,6 +244,63 @@ export default function FileManager() {
       setError(err instanceof Error ? err.message : "Delete operation failed");
     }
   }, [selectedItems, currentPath, loadDirectory]);
+
+  const downloadSelected = useCallback(async () => {
+    const itemsToDownload = Array.from(selectedItems);
+    
+    if (itemsToDownload.length === 0) return;
+    
+    if (itemsToDownload.length === 1) {
+      // Single item download
+      const itemName = itemsToDownload[0];
+      const itemPath = `${currentPath}/${itemName}`.replace(/\/+/g, "/");
+      const downloadUrl = `/api/fs/download?path=${encodeURIComponent(itemPath)}`;
+      
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      const item = allItems.find(i => i.name === itemName);
+      link.download = item?.type === "dir" ? `${itemName}.zip` : itemName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } else {
+      // Multiple items download - create a temporary ZIP
+      const zipName = `${allItems.length > 1 ? 'selected-items' : 'download'}.zip`;
+      
+      try {
+        const response = await fetch("/api/fs/download-multiple", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            items: itemsToDownload.map(itemName => ({
+              name: itemName,
+              path: `${currentPath}/${itemName}`.replace(/\/+/g, "/")
+            })),
+            basePath: currentPath
+          }),
+        });
+        
+        if (response.ok) {
+          const blob = await response.blob();
+          const url = window.URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = zipName;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(url);
+        } else {
+          throw new Error("Failed to create download archive");
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Download failed");
+      }
+    }
+    
+    // Clear selection after download
+    setSelectedItems(new Set());
+  }, [selectedItems, currentPath, allItems]);
 
   const handleMoveCopy = useCallback(
     async (targetPath: string) => {
@@ -438,14 +495,14 @@ export default function FileManager() {
             break;
 
           case "download":
-            if (item.url) {
-              const link = document.createElement("a");
-              link.href = item.url;
-              link.download = item.name;
-              document.body.appendChild(link);
-              link.click();
-              document.body.removeChild(link);
-            }
+            // Use the new download API for both files and folders
+            const downloadUrl = `/api/fs/download?path=${encodeURIComponent(itemPath)}`;
+            const link = document.createElement("a");
+            link.href = downloadUrl;
+            link.download = item.type === "dir" ? `${item.name}.zip` : item.name;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
             break;
 
           case "copy":
@@ -532,7 +589,7 @@ export default function FileManager() {
           showHidden={showHidden}
           onViewModeChange={setViewMode}
           onSortChange={(by: string, order: string) => {
-            setSortBy(by as "name" | "type" | "size" | "date");
+            setSortBy(by as "name" | "kind" | "size" | "date");
             setSortOrder(order as "asc" | "desc");
           }}
           onToggleHidden={() => setShowHidden(!showHidden)}
@@ -564,6 +621,11 @@ export default function FileManager() {
                 mode: "copy",
                 items: Array.from(selectedItems),
               });
+            }
+          }}
+          onDownload={() => {
+            if (selectedItems.size > 0) {
+              downloadSelected();
             }
           }}
           onCreateFolder={(name: string) => createFolder(name)}

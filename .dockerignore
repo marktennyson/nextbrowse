@@ -75,3 +75,43 @@ README.md
 
 # Scripts
 *.sh
+
+# User data files - exclude all media and large files
+*.mp4
+*.avi
+*.mkv
+*.mov
+*.wmv
+*.flv
+*.webm
+*.mp3
+*.wav
+*.flac
+*.aac
+*.m4a
+*.ogg
+*.zip
+*.rar
+*.7z
+*.tar
+*.gz
+*.iso
+*.dmg
+*.pkg
+*.exe
+*.msi
+*.deb
+*.rpm
+
+# Large directories that might contain user data
+movies/
+downloads/
+Documents/
+Desktop/
+Pictures/
+Videos/
+Music/
+
+# Test files
+test-download.zip
+*.zip

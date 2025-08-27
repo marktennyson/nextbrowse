@@ -13,12 +13,12 @@ import Divider from "./Divider";
 interface ToolbarProps {
   selectedCount: number;
   viewMode: "grid" | "list";
-  sortBy: "name" | "type" | "size" | "date";
+  sortBy: "name" | "kind" | "size" | "date";
   sortOrder: "asc" | "desc";
   showHidden: boolean;
   onViewModeChange: (mode: "grid" | "list") => void;
   onSortChange: (
-    by: "name" | "type" | "size" | "date",
+    by: "name" | "kind" | "size" | "date",
     order: "asc" | "desc"
   ) => void;
   onToggleHidden: () => void;
@@ -27,6 +27,7 @@ interface ToolbarProps {
   onDelete: () => void;
   onMove: () => void;
   onCopy: () => void;
+  onDownload: () => void;
   onCreateFolder: (name: string) => void;
   onRefresh: () => void;
   onNavigateUp: () => void;
@@ -47,13 +48,14 @@ export default function Toolbar({
   onDelete,
   onMove,
   onCopy,
+  onDownload,
   onCreateFolder,
   onRefresh,
   onNavigateUp,
   canNavigateUp,
 }: ToolbarProps) {
   return (
-    <div className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 rounded-lg sm:rounded-xl shadow-lg shadow-gray-900/5 dark:shadow-gray-900/20 mb-3 sm:mb-4">
+    <div className="glass rounded-lg sm:rounded-xl shadow-lg shadow-slate-900/20 mb-3 sm:mb-4" style={{background: 'var(--glass-bg)', border: '1px solid var(--glass-border)'}}>
       <div className="p-2 sm:p-4">
         {/* Main toolbar */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 md:gap-4">
@@ -74,6 +76,7 @@ export default function Toolbar({
               onMove={onMove}
               onCopy={onCopy}
               onDelete={onDelete}
+              onDownload={onDownload}
               onClearSelection={onClearSelection}
               onSelectAll={onSelectAll}
             />
