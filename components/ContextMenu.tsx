@@ -100,6 +100,15 @@ export default function ContextMenu({
       textColor: "text-slate-700 dark:text-slate-200",
     },
     {
+      label: "Open with IDE",
+      icon: CpuChipIcon,
+      action: "openWithIDE",
+      show: item?.type === "dir",
+      gradient: "",
+      borderColor: "",
+      textColor: "text-slate-700 dark:text-slate-200",
+    },
+    {
       label: "Download",
       icon: ArrowDownTrayIcon,
       action: "download",

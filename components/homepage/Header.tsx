@@ -1,5 +1,7 @@
 import Breadcrumbs from "@/components/Breadcrumbs";
 import ThemeToggle from "@/components/ThemeToggle";
+import Link from "next/link";
+import { CodeBracketIcon } from "@heroicons/react/24/outline";
 
 interface HeaderProps {
   currentPath: string;
@@ -37,8 +39,15 @@ export default function Header({
           <span>{selectedItemsCount} selected</span>
         </div>
 
-        {/* Right: Theme Toggle */}
-        <div className="shrink-0">
+        {/* Right: IDE Link + Theme Toggle */}
+        <div className="shrink-0 flex items-center gap-2">
+          <Link
+            href="/ide"
+            className="p-2 rounded-md bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
+            title="Open IDE"
+          >
+            <CodeBracketIcon className="w-5 h-5" />
+          </Link>
           <ThemeToggle />
         </div>
       </div>

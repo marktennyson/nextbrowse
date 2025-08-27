@@ -33,7 +33,9 @@ export default function FileManager() {
   const [error, setError] = useState<string | null>(null);
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [sortBy, setSortBy] = useState<"name" | "type" | "size" | "date">("name");
+  const [sortBy, setSortBy] = useState<"name" | "type" | "size" | "date">(
+    "name"
+  );
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [searchQuery, setSearchQuery] = useState("");
   const [showHidden, setShowHidden] = useState(false);
@@ -306,85 +308,113 @@ export default function FileManager() {
     [renameDialog.item, currentPath, loadDirectory, closeRenameDialog]
   );
 
+  // File edit handler
+  const handleFileEdit = useCallback(
+    (item: FileItem) => {
+      const filePath = `${currentPath}/${item.name}`.replace(/\/+/g, "/");
+      const encodedPath = encodeURIComponent(filePath);
+      window.open(`/ide?file=${encodedPath}`, "_blank");
+    },
+    [currentPath]
+  );
+
   // Context menu action handler
-  const handleContextMenuAction = useCallback(async (action: string) => {
-    const item = contextMenu.item;
-    closeContextMenu();
-    if (!item) return;
-    const itemPath = `${currentPath}/${item.name}`.replace(/\/+/g, "/");
+  const handleContextMenuAction = useCallback(
+    async (action: string) => {
+      const item = contextMenu.item;
+      closeContextMenu();
+      if (!item) return;
+      const itemPath = `${currentPath}/${item.name}`.replace(/\/+/g, "/");
 
-    try {
-      switch (action) {
-        case "open":
-          if (item.type === "dir") {
-            navigate(item.name);
-          } else if (item.url) {
-            window.open(item.url, "_blank");
-          }
-          break;
+      try {
+        switch (action) {
+          case "open":
+            if (item.type === "dir") {
+              navigate(item.name);
+            } else if (item.url) {
+              window.open(item.url, "_blank");
+            }
+            break;
 
-        case "download":
-          if (item.url) {
-            const link = document.createElement("a");
-            link.href = item.url;
-            link.download = item.name;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-          }
-          break;
+          case "openWithIDE":
+            if (item.type === "dir") {
+              const encodedPath = encodeURIComponent(itemPath);
+              window.open(`/ide?folder=${encodedPath}`, "_blank");
+            }
+            break;
 
-        case "copy":
-          setMoveCopyDialog({
-            open: true,
-            mode: "copy",
-            items: [item.name],
-          });
-          break;
+          case "download":
+            if (item.url) {
+              const link = document.createElement("a");
+              link.href = item.url;
+              link.download = item.name;
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+            }
+            break;
 
-        case "rename":
-          openRenameDialog(item);
-          break;
+          case "copy":
+            setMoveCopyDialog({
+              open: true,
+              mode: "copy",
+              items: [item.name],
+            });
+            break;
 
-        case "delete":
-          setConfirmDialog({
-            open: true,
-            title: "Delete Item",
-            message: `Are you sure you want to delete "${item.name}"?`,
-            onConfirm: async () => {
-              try {
-                const response = await fetch("/api/fs/delete", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ path: itemPath }),
-                });
+          case "rename":
+            openRenameDialog(item);
+            break;
 
-                if (!response.ok) {
-                  const error = await response.json();
-                  setError(error.error || "Delete failed");
-                } else {
-                  await loadDirectory(currentPath);
+          case "delete":
+            setConfirmDialog({
+              open: true,
+              title: "Delete Item",
+              message: `Are you sure you want to delete "${item.name}"?`,
+              onConfirm: async () => {
+                try {
+                  const response = await fetch("/api/fs/delete", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ path: itemPath }),
+                  });
+
+                  if (!response.ok) {
+                    const error = await response.json();
+                    setError(error.error || "Delete failed");
+                  } else {
+                    await loadDirectory(currentPath);
+                  }
+                } catch {
+                  setError("Failed to delete item");
                 }
-              } catch {
-                setError("Failed to delete item");
-              }
-            },
-          });
-          break;
+              },
+            });
+            break;
 
-        case "properties":
-          openPropertiesDialog(item);
-          break;
+          case "properties":
+            openPropertiesDialog(item);
+            break;
 
-        default:
-          break;
+          default:
+            break;
+        }
+      } catch {
+        setError(`Failed to perform ${action} operation`);
       }
-    } catch {
-      setError(`Failed to perform ${action} operation`);
-    }
-  }, [contextMenu.item, currentPath, navigate, setMoveCopyDialog, openRenameDialog, setConfirmDialog, loadDirectory, openPropertiesDialog, closeContextMenu]);
-
-  // Show loading spinner if initial load
+    },
+    [
+      contextMenu.item,
+      currentPath,
+      navigate,
+      setMoveCopyDialog,
+      openRenameDialog,
+      setConfirmDialog,
+      loadDirectory,
+      openPropertiesDialog,
+      closeContextMenu,
+    ]
+  ); // Show loading spinner if initial load
   if (loading && items.length === 0) {
     return <LoadingSpinner />;
   }
@@ -449,9 +479,7 @@ export default function FileManager() {
           canNavigateUp={currentPath !== "/"}
         />
 
-        {error && (
-          <ErrorMessage error={error} onClose={() => setError(null)} />
-        )}
+        {error && <ErrorMessage error={error} onClose={() => setError(null)} />}
 
         <UploadDropzone onUpload={handleUpload}>
           <FileList
@@ -462,6 +490,7 @@ export default function FileManager() {
             onSelect={selectItem}
             onContextMenu={handleContextMenu}
             onImageClick={(item) => openImageViewer(item, filteredItems)}
+            onFileEdit={handleFileEdit}
             loading={loading}
           />
         </UploadDropzone>

@@ -18,6 +18,7 @@ import {
   BeakerIcon,
   ChartBarIcon,
 } from "@heroicons/react/24/outline";
+import { isEditableFile } from "@/lib/file-utils";
 
 interface FileItem {
   name: string;
@@ -35,6 +36,7 @@ interface FileListProps {
   onSelect: (item: FileItem, selected: boolean) => void;
   onContextMenu: (e: React.MouseEvent, item?: FileItem) => void;
   onImageClick?: (item: FileItem) => void;
+  onFileEdit?: (item: FileItem) => void;
   loading: boolean;
 }
 
@@ -209,6 +211,7 @@ export default function FileList({
   onSelect,
   onContextMenu,
   onImageClick,
+  onFileEdit,
   loading,
 }: FileListProps) {
   if (loading) {
@@ -261,6 +264,8 @@ export default function FileList({
                     // Default behavior: navigate/open
                     if (item.type === "dir") {
                       onNavigate(item.name);
+                    } else if (isEditableFile(item.name) && onFileEdit) {
+                      onFileEdit(item);
                     } else if (isImageFile(item) && onImageClick) {
                       onImageClick(item);
                     } else {
@@ -374,6 +379,8 @@ export default function FileList({
                 // Default behavior: navigate/open
                 if (item.type === "dir") {
                   onNavigate(item.name);
+                } else if (isEditableFile(item.name) && onFileEdit) {
+                  onFileEdit(item);
                 } else if (isImageFile(item) && onImageClick) {
                   onImageClick(item);
                 } else {
