@@ -1,54 +1,43 @@
-# ---- Base (for shared packages/tools) ----
-FROM node:20-alpine AS base
+# ---- Deps ----
+FROM node:20-bookworm-slim AS deps
 WORKDIR /app
-# For next/image (sharp) on Alpine
-RUN apk add --no-cache libc6-compat
-
-# ---- Deps (install full deps for build) ----
-FROM base AS deps
-# Copy lockfile for reproducible installs
+ENV NODE_ENV=development \
+    NPM_CONFIG_FUND=false NPM_CONFIG_AUDIT=false NPM_CONFIG_PROGRESS=false
+# Install system deps only if you need them (kept lean by default)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
 COPY package.json package-lock.json ./
 RUN npm ci
 
-# ---- Builder (build Next.js) ----
-FROM base AS builder
+# ---- Builder ----
+FROM node:20-bookworm-slim AS builder
 WORKDIR /app
+ENV NODE_ENV=production \
+    NEXT_TELEMETRY_DISABLED=1
 COPY --from=deps /app/node_modules ./node_modules
-# Copy the rest of the source
 COPY . .
-# Build the app
 RUN npm run build
 
-# ---- Runner (production image) ----
-FROM node:20-alpine AS runner
+# ---- Runner ----
+FROM node:20-bookworm-slim AS runner
 WORKDIR /app
-RUN apk add --no-cache libc6-compat
+ENV NODE_ENV=production \
+    NEXT_TELEMETRY_DISABLED=1 \
+    PORT=3000 \
+    HOSTNAME=0.0.0.0
+# non-root user
+RUN groupadd -g 1001 nodejs && useradd -r -u 1001 -g nodejs nextjs
 
-# Create non-root user
-RUN addgroup --system --gid 1001 nodejs \
-  && adduser --system --uid 1001 nextjs
+# Copy the minimal standalone output
+# .next/standalone contains the server + required node_modules
+COPY --chown=nextjs:nodejs --from=builder /app/.next/standalone ./ 
+COPY --chown=nextjs:nodejs --from=builder /app/.next/static ./.next/static
+COPY --chown=nextjs:nodejs --from=builder /app/public ./public
 
-# Copy only what's needed to run
-COPY --chown=nextjs:nodejs package.json package-lock.json ./
-# Install production deps only
-RUN npm ci --omit=dev --ignore-scripts && npm cache clean --force
-
-# Copy built assets
-COPY --from=builder --chown=nextjs:nodejs /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
-
-# Storage mount point (matches your compose volume)
+# Storage mount point for your volume
 RUN mkdir -p /mnt/storage && chown nextjs:nodejs /mnt/storage
-
-# Environment
-ENV NODE_ENV=production
-ENV PORT=3000
-ENV HOSTNAME=0.0.0.0
-# Optional: disable Next telemetry in containers
-ENV NEXT_TELEMETRY_DISABLED=1
 
 USER nextjs
 EXPOSE 3000
-
-# Ensure your package.json has: "start": "next start -p 3000"
-CMD ["npm", "start"]
+CMD ["node", "server.js"]

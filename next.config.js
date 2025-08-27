@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Removed standalone output for now
+  output: 'standalone',
 };
 
 module.exports = nextConfig;
