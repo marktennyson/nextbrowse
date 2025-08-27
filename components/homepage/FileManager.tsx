@@ -4,6 +4,9 @@ import React, { useState, useEffect, useCallback } from "react";
 import FileList from "@/components/FileList";
 import Toolbar from "@/components/Toolbar";
 import UploadDropzone from "@/components/UploadDropzone";
+import GlobalDropzone from "@/components/GlobalDropzone";
+import { FileValidator } from "@/lib/file-validator";
+import { parseJsonResponse, handleErrorResponse } from "@/lib/api-helpers";
 import Header from "./Header";
 import ErrorMessage from "./ErrorMessage";
 import EmptyState from "./EmptyState";
@@ -24,6 +27,14 @@ interface DirectoryData {
   path: string;
   items: FileItem[];
   error?: string;
+  pagination?: {
+    page: number;
+    pageSize: number;
+    totalItems: number;
+    totalPages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  };
 }
 
 export default function FileManager() {
@@ -39,6 +50,8 @@ export default function FileManager() {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [searchQuery, setSearchQuery] = useState("");
   const [showHidden, setShowHidden] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pagination, setPagination] = useState<DirectoryData["pagination"]>();
 
   const {
     moveCopyDialog,
@@ -61,19 +74,30 @@ export default function FileManager() {
   } = useFileOperations();
 
   // Load directory contents
-  const loadDirectory = useCallback(async (path: string) => {
+  const loadDirectory = useCallback(async (path: string, page: number = 1, resetPage: boolean = false) => {
     setLoading(true);
     setError(null);
+    
+    if (resetPage) {
+      setCurrentPage(1);
+      page = 1;
+    }
 
     try {
       const response = await fetch(
-        `/api/fs/list?path=${encodeURIComponent(path)}`
+        `/api/fs/list?path=${encodeURIComponent(path)}&page=${page}&pageSize=50`
       );
-      const data: DirectoryData = await response.json();
+      if (!response.ok) {
+        await handleErrorResponse(response);
+      }
+
+      const data = await parseJsonResponse(response) as DirectoryData;
 
       if (data.ok) {
         setItems(data.items);
         setCurrentPath(data.path);
+        setPagination(data.pagination);
+        setCurrentPage(page);
       } else {
         setError(data.error || "Failed to load directory");
       }
@@ -84,9 +108,14 @@ export default function FileManager() {
     }
   }, []);
 
+  // Pagination handlers
+  const handlePageChange = useCallback((page: number) => {
+    loadDirectory(currentPath, page);
+  }, [currentPath, loadDirectory]);
+
   // Initialize
   useEffect(() => {
-    loadDirectory(currentPath);
+    loadDirectory(currentPath, 1, true);
   }, [loadDirectory, currentPath]);
 
   // Navigation
@@ -97,6 +126,7 @@ export default function FileManager() {
         : `${currentPath}/${path}`.replace(/\/+/g, "/");
       setCurrentPath(newPath);
       setSelectedItems(new Set());
+      setCurrentPage(1);
     },
     [currentPath]
   );
@@ -178,8 +208,7 @@ export default function FileManager() {
         });
 
         if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.error || "Delete failed");
+          await handleErrorResponse(response);
         }
       }
 
@@ -207,12 +236,11 @@ export default function FileManager() {
           });
 
           if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || `${mode} failed`);
+            await handleErrorResponse(response);
           }
         }
 
-        await loadDirectory(currentPath);
+        await loadDirectory(currentPath, currentPage);
         setSelectedItems(new Set());
         setMoveCopyDialog({ open: false, mode: "move", items: [] });
       } catch (err) {
@@ -221,7 +249,7 @@ export default function FileManager() {
         );
       }
     },
-    [moveCopyDialog, currentPath, loadDirectory, setMoveCopyDialog]
+    [moveCopyDialog, currentPath, currentPage, loadDirectory, setMoveCopyDialog]
   );
 
   const createFolder = useCallback(
@@ -235,21 +263,37 @@ export default function FileManager() {
         });
 
         if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.error || "Create folder failed");
+          await handleErrorResponse(response);
         }
 
-        await loadDirectory(currentPath);
+        await loadDirectory(currentPath, currentPage);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Create folder failed");
       }
     },
-    [currentPath, loadDirectory]
+    [currentPath, currentPage, loadDirectory]
   );
 
-  // File upload
+  // File upload with validation
   const handleUpload = useCallback(
     async (files: FileList) => {
+      // Validate files before upload
+      const validation = FileValidator.validate(files, {
+        maxFileSize: 100 * 1024 * 1024 * 1024, // 100GB
+        maxFiles: 50,
+        requireUniqueNames: false,
+      });
+
+      if (!validation.valid) {
+        setError(`Upload validation failed: ${validation.errors.join(', ')}`);
+        return;
+      }
+
+      if (validation.warnings.length > 0) {
+        console.warn('Upload warnings:', validation.warnings);
+      }
+
+      // Continue with existing upload logic for backwards compatibility
       const formData = new FormData();
       formData.append("path", currentPath);
 
@@ -264,17 +308,42 @@ export default function FileManager() {
         });
 
         if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.error || "Upload failed");
+          let errorMessage = "Upload failed";
+          
+          try {
+            const responseText = await response.text();
+            
+            // Check if response is HTML error page
+            if (responseText.includes('<html>')) {
+              errorMessage = `Server error: ${response.status} ${response.statusText}`;
+            } else {
+              // Try to parse as JSON
+              try {
+                const errorData = JSON.parse(responseText);
+                errorMessage = errorData.error || errorMessage;
+              } catch {
+                errorMessage = `HTTP ${response.status}: ${responseText.substring(0, 100)}`;
+              }
+            }
+          } catch {
+            errorMessage = `HTTP ${response.status}`;
+          }
+          
+          throw new Error(errorMessage);
         }
 
-        await loadDirectory(currentPath);
+        await loadDirectory(currentPath, currentPage);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Upload failed");
       }
     },
-    [currentPath, loadDirectory]
+    [currentPath, currentPage, loadDirectory]
   );
+
+  // Enhanced upload complete handler
+  const handleUploadComplete = useCallback(() => {
+    loadDirectory(currentPath, currentPage);
+  }, [currentPath, currentPage, loadDirectory]);
 
   const handleRename = useCallback(
     async (newName: string) => {
@@ -295,17 +364,16 @@ export default function FileManager() {
         });
 
         if (!response.ok) {
-          const error = await response.json();
-          setError(error.error || "Rename failed");
+          await handleErrorResponse(response);
         } else {
-          await loadDirectory(currentPath);
+          await loadDirectory(currentPath, currentPage);
           closeRenameDialog();
         }
       } catch {
         setError("Failed to rename item");
       }
     },
-    [renameDialog.item, currentPath, loadDirectory, closeRenameDialog]
+    [renameDialog.item, currentPath, currentPage, loadDirectory, closeRenameDialog]
   );
 
   // File edit handler
@@ -380,10 +448,9 @@ export default function FileManager() {
                   });
 
                   if (!response.ok) {
-                    const error = await response.json();
-                    setError(error.error || "Delete failed");
+                    await handleErrorResponse(response);
                   } else {
-                    await loadDirectory(currentPath);
+                    await loadDirectory(currentPath, currentPage);
                   }
                 } catch {
                   setError("Failed to delete item");
@@ -406,6 +473,7 @@ export default function FileManager() {
     [
       contextMenu.item,
       currentPath,
+      currentPage,
       navigate,
       setMoveCopyDialog,
       openRenameDialog,
@@ -481,7 +549,15 @@ export default function FileManager() {
 
         {error && <ErrorMessage error={error} onClose={() => setError(null)} />}
 
-        <UploadDropzone onUpload={handleUpload}>
+        <UploadDropzone 
+          onUpload={handleUpload}
+          onUploadComplete={handleUploadComplete}
+          targetPath={currentPath}
+        >
+          <GlobalDropzone 
+            onFilesDropped={handleUpload}
+            enabled={!loading}
+          />
           <FileList
             items={filteredItems}
             selectedItems={selectedItems}
@@ -497,6 +573,30 @@ export default function FileManager() {
 
         {filteredItems.length === 0 && !loading && (
           <EmptyState searchQuery={searchQuery} />
+        )}
+
+        {pagination && pagination.totalPages > 1 && (
+          <div className="flex items-center justify-center gap-2 p-4 border-t border-gray-200 bg-white">
+            <button
+              onClick={() => handlePageChange(pagination.page - 1)}
+              disabled={!pagination.hasPrev}
+              className="px-4 py-2 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Previous
+            </button>
+            
+            <span className="px-4 py-2 text-sm text-gray-600">
+              Page {pagination.page} of {pagination.totalPages}
+            </span>
+            
+            <button
+              onClick={() => handlePageChange(pagination.page + 1)}
+              disabled={!pagination.hasNext}
+              className="px-4 py-2 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Next
+            </button>
+          </div>
         )}
       </div>
 

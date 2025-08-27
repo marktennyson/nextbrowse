@@ -43,7 +43,17 @@ export default function MoveCopyDialog({
     
     try {
       const response = await fetch(`/api/fs/list?path=${encodeURIComponent(path)}`);
-      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      
+      const responseText = await response.text();
+      if (responseText.includes('<html>')) {
+        throw new Error(`Server error: ${response.status} ${response.statusText}`);
+      }
+      
+      const data = JSON.parse(responseText);
       
       if (data.ok) {
         // Filter to show only directories
