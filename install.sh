@@ -80,8 +80,8 @@ if [ ! -f .env ]; then
 # Root directory on your local machine to browse (REQUIRED)
 ROOT_PATH=/path/to/your/local/directory
 
-# Port to run the application on (optional, defaults to 8080)
-PORT=8080
+# Port to run the application on (optional, defaults to 2929)
+PORT=2929
 
 # Optional: Custom domain/host (defaults to localhost)
 # HOST=localhost
@@ -151,7 +151,7 @@ else
 fi
 
 # Set default port
-PORT=${PORT:-8080}
+PORT=${PORT:-2929}
 
 echo ""
 echo "📋 Configuration Summary:"

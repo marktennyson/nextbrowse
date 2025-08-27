@@ -42,7 +42,7 @@ if [ ! -d "$ROOT_PATH" ]; then
 fi
 
 # Set default port if not specified
-PORT=${PORT:-8080}
+PORT=${PORT:-2929}
 
 echo "📂 Browsing directory: $ROOT_PATH"
 echo "🌐 Will be available at: http://localhost:$PORT"
