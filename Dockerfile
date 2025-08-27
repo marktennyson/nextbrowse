@@ -40,7 +40,7 @@ COPY --chown=nextjs:nodejs --from=builder /app/.next/static ./.next/static
 COPY --chown=nextjs:nodejs --from=builder /app/public ./public
 
 # Storage mount point
-RUN mkdir -p /mnt/storage && chown nextjs:nodejs /mnt/storage
+RUN mkdir -p /app/static && chown nextjs:nodejs /app/static
 
 USER nextjs
 EXPOSE 3000
