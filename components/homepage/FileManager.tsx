@@ -7,6 +7,7 @@ import UploadDropzone from "@/components/UploadDropzone";
 import GlobalDropzone from "@/components/GlobalDropzone";
 import { FileValidator } from "@/lib/file-validator";
 import { parseJsonResponse, handleErrorResponse } from "@/lib/api-helpers";
+import { apiClient } from "@/lib/api-client";
 import Header from "./Header";
 import ErrorMessage from "./ErrorMessage";
 import EmptyState from "./EmptyState";
@@ -102,14 +103,10 @@ export default function FileManager() {
     setError(null);
 
     try {
-      const response = await fetch(
-        `/api/fs/list?path=${encodeURIComponent(path)}&offset=${offset}&limit=${ITEMS_PER_LOAD}`
-      );
-      if (!response.ok) {
-        await handleErrorResponse(response);
-      }
-
-      const data = await parseJsonResponse(response) as DirectoryData;
+      const data = await apiClient.listDirectory(path, {
+        offset,
+        limit: ITEMS_PER_LOAD
+      }) as DirectoryData;
 
       if (data.ok) {
         if (reset) {
@@ -413,42 +410,15 @@ export default function FileManager() {
         console.warn('Upload warnings:', validation.warnings);
       }
 
-      // Continue with existing upload logic for backwards compatibility
-      const formData = new FormData();
-      formData.append("path", currentPath);
-
-      Array.from(files).forEach((file) => {
-        formData.append("files", file);
-      });
-
+      // Upload using Go backend
       try {
-        const response = await fetch("/api/fs/upload", {
-          method: "POST",
-          body: formData,
-        });
+        const response = await apiClient.uploadFiles(currentPath, files);
 
         if (!response.ok) {
-          let errorMessage = "Upload failed";
-          
-          try {
-            const responseText = await response.text();
-            
-            // Check if response is HTML error page
-            if (responseText.includes('<html>')) {
-              errorMessage = `Server error: ${response.status} ${response.statusText}`;
-            } else {
-              // Try to parse as JSON
-              try {
-                const errorData = JSON.parse(responseText);
-                errorMessage = errorData.error || errorMessage;
-              } catch {
-                errorMessage = `HTTP ${response.status}: ${responseText.substring(0, 100)}`;
-              }
-            }
-          } catch {
-            errorMessage = `HTTP ${response.status}`;
+          let errorMessage = response.error || "Upload failed";
+          if (response.errors && response.errors.length > 0) {
+            errorMessage += ": " + response.errors.join(", ");
           }
-          
           throw new Error(errorMessage);
         }
 
