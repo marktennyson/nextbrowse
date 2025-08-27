@@ -18,16 +18,19 @@ A modern, feature-rich file browser built with Next.js 15, designed to provide a
 ## 🚀 Quick Start with Docker
 
 ### Prerequisites
+
 - Docker and Docker Compose installed
 - A local directory you want to browse
 
 ### 1. Clone the Repository
+
 ```bash
 git clone <repository-url>
 cd nextbrowse
 ```
 
 ### 2. Configure Environment
+
 ```bash
 # Copy the environment template
 cp .env.example .env
@@ -38,6 +41,7 @@ nano .env
 ```
 
 ### 3. Run with Docker Compose
+
 ```bash
 # Build and start the services
 docker-compose up -d
@@ -47,9 +51,11 @@ docker-compose logs -f
 ```
 
 ### 4. Access the Application
+
 Open your browser and navigate to:
-- **File Browser**: http://localhost:8080
-- **Direct File Access**: http://localhost:8080/files/
+
+- **File Browser**: http://localhost:2929
+- **Direct File Access**: http://localhost:2929/files/
 
 ## ⚙️ Configuration
 
@@ -61,28 +67,31 @@ Create a `.env` file in the project root:
 # REQUIRED: Path to the directory you want to browse
 ROOT_PATH=/path/to/your/local/directory
 
-# OPTIONAL: Port to run on (default: 8080)
-PORT=8080
+# OPTIONAL: Port to run on (default: 2929)
+PORT=2929
 ```
 
 ### Example Configurations
 
 **Browse your Downloads folder:**
+
 ```bash
 ROOT_PATH=/Users/yourname/Downloads
-PORT=8080
+PORT=2929
 ```
 
 **Browse an external drive:**
+
 ```bash
 ROOT_PATH=/mnt/external-drive
 PORT=9000
 ```
 
 **Browse your entire home directory:**
+
 ```bash
 ROOT_PATH=/Users/yourname
-PORT=8080
+PORT=2929
 ```
 
 ## 🛠️ Development Setup
@@ -90,10 +99,12 @@ PORT=8080
 For local development without Docker:
 
 ### Prerequisites
+
 - Node.js 18+
 - npm or yarn
 
 ### Setup
+
 ```bash
 # Install dependencies
 npm install
@@ -161,18 +172,23 @@ nextbrowse/
 ## 🔧 Customization
 
 ### Port Configuration
+
 Change the port by updating your `.env` file:
+
 ```bash
 PORT=9000
 ```
 
 ### Directory Permissions
+
 Ensure the directory you want to browse has appropriate read permissions:
+
 ```bash
 chmod -R 755 /path/to/your/directory
 ```
 
 ### Security Considerations
+
 - The application runs in a container with limited privileges
 - Path traversal attacks are prevented
 - Only the specified directory is accessible
@@ -183,18 +199,22 @@ chmod -R 755 /path/to/your/directory
 ### Common Issues
 
 **"ENOENT: no such file or directory"**
+
 - Check that `ROOT_PATH` in `.env` points to an existing directory
 - Verify directory permissions
 
 **"Port already in use"**
+
 - Change the `PORT` in `.env` to an unused port
-- Check what's using the port: `lsof -i :8080`
+- Check what's using the port: `lsof -i :2929`
 
 **"Cannot access files"**
+
 - Ensure the directory has read permissions
 - Check Docker has access to the specified path
 
 ### Logs
+
 ```bash
 # View all logs
 docker-compose logs

@@ -7,12 +7,14 @@ You now have a complete Docker-based file browser setup! Here's everything you n
 ## 📋 What's Included
 
 ### ✅ Complete Docker Stack
+
 - **Next.js App**: Modern file browser interface
-- **nginx**: High-performance file serving with JSON directory listings  
+- **nginx**: High-performance file serving with JSON directory listings
 - **Docker Compose**: Orchestrated multi-container setup
 - **Auto-configuration**: Minimal setup required
 
 ### ✅ Key Features
+
 - Browse any local directory through web interface
 - Upload, download, copy, move, delete files
 - Grid/list view modes with search and sorting
@@ -23,31 +25,35 @@ You now have a complete Docker-based file browser setup! Here's everything you n
 ## 🎯 Quick Start
 
 ### 1. Set Your Directory
+
 Edit the `.env` file:
+
 ```bash
 ROOT_PATH=/path/to/your/directory  # Set this to your desired directory
-PORT=8080                          # Port for the web interface
+PORT=2929                          # Port for the web interface
 ```
 
 ### 2. Start the Application
+
 ```bash
 # Option 1: Use the convenient startup script
 ./start.sh
 
-# Option 2: Use Docker Compose directly  
+# Option 2: Use Docker Compose directly
 docker-compose up -d
 ```
 
 ### 3. Access Your Files
-- **Web Interface**: http://localhost:8080
-- **Direct File Access**: http://localhost:8080/files/
+
+- **Web Interface**: http://localhost:2929
+- **Direct File Access**: http://localhost:2929/files/
 
 ## 🏗️ Architecture
 
 ```
 ┌─────────────────┐    ┌──────────────┐    ┌─────────────────┐
 │   Your Browser  │────│    nginx     │────│   Next.js App  │
-│  localhost:8080 │    │ (Port 8080)  │    │  (Port 3000)   │
+│  localhost:2929 │    │ (Port 2929)  │    │  (Port 3000)   │
 └─────────────────┘    └──────────────┘    └─────────────────┘
                               │
                               ▼
@@ -61,19 +67,22 @@ docker-compose up -d
 ## 🔧 Configuration Options
 
 ### Environment Variables (.env)
+
 ```bash
 # REQUIRED: Local directory to browse
 ROOT_PATH=/Users/yourname/Documents
 
-# OPTIONAL: Port (default: 8080)
-PORT=8080
+# OPTIONAL: Port (default: 2929)
+PORT=2929
 
 # OPTIONAL: Host (default: localhost)
 # HOST=0.0.0.0
 ```
 
 ### nginx Configuration
+
 The `nginx.conf` is pre-configured with:
+
 - JSON directory listings (`autoindex_format json`)
 - File serving optimizations
 - Security headers
@@ -83,21 +92,24 @@ The `nginx.conf` is pre-configured with:
 ## 📁 Example Configurations
 
 **Browse Downloads:**
+
 ```bash
 ROOT_PATH=/Users/yourname/Downloads
-PORT=8080
+PORT=2929
 ```
 
 **Browse External Drive:**
+
 ```bash
 ROOT_PATH=/mnt/external-drive
 PORT=9000
 ```
 
 **Browse Project Files:**
+
 ```bash
 ROOT_PATH=/home/user/projects
-PORT=8080
+PORT=2929
 ```
 
 ## 🛠️ Management Commands
@@ -106,7 +118,7 @@ PORT=8080
 # Start services
 docker-compose up -d
 
-# Stop services  
+# Stop services
 docker-compose down
 
 # View logs
@@ -125,22 +137,27 @@ docker-compose up -d
 ### Common Issues & Solutions
 
 **🔴 "Directory not found"**
+
 - Check `ROOT_PATH` in `.env` points to existing directory
 - Verify directory permissions: `ls -la /path/to/directory`
 
 **🔴 "Port already in use"**
+
 - Change `PORT` in `.env` to unused port
-- Find what's using port: `lsof -i :8080`
+- Find what's using port: `lsof -i :2929`
 
 **🔴 "Docker not running"**
+
 - Start Docker Desktop or Docker daemon
 - Verify: `docker --version`
 
 **🔴 "Permission denied"**
+
 - Ensure directory is readable: `chmod -R 755 /path/to/directory`
 - Check Docker has file system access permissions
 
 ### Debug Commands
+
 ```bash
 # Check container status
 docker-compose ps
@@ -175,7 +192,7 @@ Your NextBrowse file browser is now ready! Simply:
 
 1. ✅ Set your `ROOT_PATH` in `.env`
 2. ✅ Run `./start.sh` or `docker-compose up -d`
-3. ✅ Open http://localhost:8080 in your browser
+3. ✅ Open http://localhost:2929 in your browser
 4. ✅ Start browsing your files!
 
 Enjoy your new web-based file browser! 🎊
