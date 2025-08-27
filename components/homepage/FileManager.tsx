@@ -28,18 +28,23 @@ interface DirectoryData {
   items: FileItem[];
   error?: string;
   pagination?: {
-    page: number;
-    pageSize: number;
+    // Page-based pagination (legacy)
+    page?: number;
+    pageSize?: number;
+    totalPages?: number;
+    hasNext?: boolean;
+    hasPrev?: boolean;
+    // Offset-based pagination (for infinite scroll)
+    offset?: number;
+    limit?: number;
     totalItems: number;
-    totalPages: number;
-    hasNext: boolean;
-    hasPrev: boolean;
+    hasMore?: boolean;
+    nextOffset?: number | null;
   };
 }
 
 export default function FileManager() {
   const [currentPath, setCurrentPath] = useState("/");
-  const [items, setItems] = useState<FileItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
@@ -51,8 +56,11 @@ export default function FileManager() {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [searchQuery, setSearchQuery] = useState("");
   const [showHidden, setShowHidden] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pagination, setPagination] = useState<DirectoryData["pagination"]>();
+  const [allItems, setAllItems] = useState<FileItem[]>([]);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [currentOffset, setCurrentOffset] = useState(0);
+  const ITEMS_PER_LOAD = 50;
 
   const {
     moveCopyDialog,
@@ -74,19 +82,21 @@ export default function FileManager() {
     closePropertiesDialog,
   } = useFileOperations();
 
-  // Load directory contents
-  const loadDirectory = useCallback(async (path: string, page: number = 1, resetPage: boolean = false) => {
-    setLoading(true);
-    setError(null);
-    
-    if (resetPage) {
-      setCurrentPage(1);
-      page = 1;
+  // Load directory contents with infinite scroll
+  const loadDirectory = useCallback(async (path: string, reset: boolean = false, offset: number = 0) => {
+    if (reset) {
+      setLoading(true);
+      setAllItems([]);
+      setCurrentOffset(0);
+      setHasMore(true);
+    } else {
+      setLoadingMore(true);
     }
+    setError(null);
 
     try {
       const response = await fetch(
-        `/api/fs/list?path=${encodeURIComponent(path)}&page=${page}&pageSize=50`
+        `/api/fs/list?path=${encodeURIComponent(path)}&offset=${offset}&limit=${ITEMS_PER_LOAD}`
       );
       if (!response.ok) {
         await handleErrorResponse(response);
@@ -95,10 +105,14 @@ export default function FileManager() {
       const data = await parseJsonResponse(response) as DirectoryData;
 
       if (data.ok) {
-        setItems(data.items);
+        if (reset) {
+          setAllItems(data.items);
+        } else {
+          setAllItems(prev => [...prev, ...data.items]);
+        }
         setCurrentPath(data.path);
-        setPagination(data.pagination);
-        setCurrentPage(page);
+        setHasMore(data.pagination?.hasMore || false);
+        setCurrentOffset(data.pagination?.nextOffset || offset + data.items.length);
       } else {
         setError(data.error || "Failed to load directory");
       }
@@ -106,17 +120,20 @@ export default function FileManager() {
       setError("Network error while loading directory");
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
-  }, []);
+  }, [ITEMS_PER_LOAD]);
 
-  // Pagination handlers
-  const handlePageChange = useCallback((page: number) => {
-    loadDirectory(currentPath, page);
-  }, [currentPath, loadDirectory]);
+  // Load more items for infinite scroll
+  const loadMoreItems = useCallback(() => {
+    if (!loadingMore && hasMore) {
+      loadDirectory(currentPath, false, currentOffset);
+    }
+  }, [currentPath, currentOffset, hasMore, loadingMore, loadDirectory]);
 
   // Initialize
   useEffect(() => {
-    loadDirectory(currentPath, 1, true);
+    loadDirectory(currentPath, true, 0);
   }, [loadDirectory, currentPath]);
 
   // Navigation
@@ -128,7 +145,9 @@ export default function FileManager() {
       setCurrentPath(newPath);
       setSelectedItems(new Set());
       setHighlightedItem(null);
-      setCurrentPage(1);
+      setAllItems([]);
+      setCurrentOffset(0);
+      setHasMore(true);
     },
     [currentPath]
   );
@@ -158,7 +177,7 @@ export default function FileManager() {
   }, []);
 
   // Filtering and sorting
-  const filteredItems = items
+  const filteredItems = allItems
     .filter((item) => {
       if (!showHidden && item.name.startsWith(".")) return false;
       if (!searchQuery) return true;
@@ -219,7 +238,7 @@ export default function FileManager() {
         }
       }
 
-      await loadDirectory(currentPath);
+      await loadDirectory(currentPath, true, 0);
       setSelectedItems(new Set());
     } catch (err) {
       setError(err instanceof Error ? err.message : "Delete operation failed");
@@ -247,7 +266,7 @@ export default function FileManager() {
           }
         }
 
-        await loadDirectory(currentPath, currentPage);
+        await loadDirectory(currentPath, true, 0);
         setSelectedItems(new Set());
         setMoveCopyDialog({ open: false, mode: "move", items: [] });
       } catch (err) {
@@ -256,7 +275,7 @@ export default function FileManager() {
         );
       }
     },
-    [moveCopyDialog, currentPath, currentPage, loadDirectory, setMoveCopyDialog]
+    [moveCopyDialog, currentPath, loadDirectory, setMoveCopyDialog]
   );
 
   const createFolder = useCallback(
@@ -273,12 +292,12 @@ export default function FileManager() {
           await handleErrorResponse(response);
         }
 
-        await loadDirectory(currentPath, currentPage);
+        await loadDirectory(currentPath, true, 0);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Create folder failed");
       }
     },
-    [currentPath, currentPage, loadDirectory]
+    [currentPath, loadDirectory]
   );
 
   // File upload with validation
@@ -339,18 +358,18 @@ export default function FileManager() {
           throw new Error(errorMessage);
         }
 
-        await loadDirectory(currentPath, currentPage);
+        await loadDirectory(currentPath, true, 0);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Upload failed");
       }
     },
-    [currentPath, currentPage, loadDirectory]
+    [currentPath, loadDirectory]
   );
 
   // Enhanced upload complete handler
   const handleUploadComplete = useCallback(() => {
-    loadDirectory(currentPath, currentPage);
-  }, [currentPath, currentPage, loadDirectory]);
+    loadDirectory(currentPath, true, 0);
+  }, [currentPath, loadDirectory]);
 
   const handleRename = useCallback(
     async (newName: string) => {
@@ -373,14 +392,14 @@ export default function FileManager() {
         if (!response.ok) {
           await handleErrorResponse(response);
         } else {
-          await loadDirectory(currentPath, currentPage);
+          await loadDirectory(currentPath, true, 0);
           closeRenameDialog();
         }
       } catch {
         setError("Failed to rename item");
       }
     },
-    [renameDialog.item, currentPath, currentPage, loadDirectory, closeRenameDialog]
+    [renameDialog.item, currentPath, loadDirectory, closeRenameDialog]
   );
 
   // File edit handler
@@ -457,7 +476,7 @@ export default function FileManager() {
                   if (!response.ok) {
                     await handleErrorResponse(response);
                   } else {
-                    await loadDirectory(currentPath, currentPage);
+                    await loadDirectory(currentPath, true, 0);
                   }
                 } catch {
                   setError("Failed to delete item");
@@ -480,7 +499,6 @@ export default function FileManager() {
     [
       contextMenu.item,
       currentPath,
-      currentPage,
       navigate,
       setMoveCopyDialog,
       openRenameDialog,
@@ -490,7 +508,7 @@ export default function FileManager() {
       closeContextMenu,
     ]
   ); // Show loading spinner if initial load
-  if (loading && items.length === 0) {
+  if (loading && allItems.length === 0) {
     return <LoadingSpinner />;
   }
 
@@ -549,7 +567,7 @@ export default function FileManager() {
             }
           }}
           onCreateFolder={(name: string) => createFolder(name)}
-          onRefresh={() => loadDirectory(currentPath)}
+          onRefresh={() => loadDirectory(currentPath, true, 0)}
           onNavigateUp={navigateUp}
           canNavigateUp={currentPath !== "/"}
         />
@@ -577,35 +595,14 @@ export default function FileManager() {
             onImageClick={(item) => openImageViewer(item, filteredItems)}
             onFileEdit={handleFileEdit}
             loading={loading}
+            hasMore={hasMore && !searchQuery}
+            onLoadMore={loadMoreItems}
+            loadingMore={loadingMore}
           />
         </UploadDropzone>
 
         {filteredItems.length === 0 && !loading && (
           <EmptyState searchQuery={searchQuery} />
-        )}
-
-        {pagination && pagination.totalPages > 1 && (
-          <div className="flex items-center justify-center gap-2 p-4 border-t border-gray-200 bg-white">
-            <button
-              onClick={() => handlePageChange(pagination.page - 1)}
-              disabled={!pagination.hasPrev}
-              className="px-4 py-2 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Previous
-            </button>
-            
-            <span className="px-4 py-2 text-sm text-gray-600">
-              Page {pagination.page} of {pagination.totalPages}
-            </span>
-            
-            <button
-              onClick={() => handlePageChange(pagination.page + 1)}
-              disabled={!pagination.hasNext}
-              className="px-4 py-2 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Next
-            </button>
-          </div>
         )}
       </div>
 

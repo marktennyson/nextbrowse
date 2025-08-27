@@ -1,6 +1,7 @@
 "use client";
 import Image from "next/image";
-import React, { useRef, useCallback } from "react";
+import React, { useRef, useCallback, useMemo } from "react";
+import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
 import {
   FolderIcon,
   DocumentIcon,
@@ -40,6 +41,9 @@ interface FileListProps {
   onImageClick?: (item: FileItem) => void;
   onFileEdit?: (item: FileItem) => void;
   loading: boolean;
+  hasMore?: boolean;
+  onLoadMore?: () => void;
+  loadingMore?: boolean;
 }
 
 function getFileIcon(item: FileItem) {
@@ -217,16 +221,36 @@ export default function FileList({
   onImageClick,
   onFileEdit,
   loading,
+  hasMore = false,
+  onLoadMore,
+  loadingMore = false,
 }: FileListProps) {
+  // Deduplicate items by name to avoid rendering duplicates
+  const uniqueItems = useMemo(() => {
+    const seen = new Set<string>();
+    return items.filter((it) => {
+      if (seen.has(it.name)) return false;
+      seen.add(it.name);
+      return true;
+    });
+  }, [items]);
   // Track click timers for double-click detection
   const clickTimersRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Infinite scroll hook
+  const { loadingRef } = useInfiniteScroll({
+    hasMore: hasMore && !loading,
+    loading: loadingMore,
+    onLoadMore: onLoadMore || (() => {}),
+    rootMargin: "200px",
+  });
 
   const handleItemClick = useCallback(
     (item: FileItem, isSelected: boolean, event: React.MouseEvent) => {
       // Prevent text selection on double-click
       event.preventDefault();
-      
+
       // Handle Cmd+click / Ctrl+click for multi-selection anywhere on the item
       if (event.ctrlKey || event.metaKey) {
         onSelect(item, !isSelected);
@@ -261,7 +285,7 @@ export default function FileList({
         // First click - set timer for single click
         const timer = setTimeout(() => {
           timers.delete(itemKey);
-          
+
           // Single click in normal mode: just highlight (show blue border), don't select
           if (highlightedItem === item.name) {
             // If already highlighted, remove highlight
@@ -275,16 +299,27 @@ export default function FileList({
         timers.set(itemKey, timer);
       }
     },
-    [onSelect, onNavigate, onFileEdit, onImageClick, selectedItems, highlightedItem, onHighlight]
+    [
+      onSelect,
+      onNavigate,
+      onFileEdit,
+      onImageClick,
+      selectedItems,
+      highlightedItem,
+      onHighlight,
+    ]
   );
 
   // Handle click outside to remove highlight
-  const handleContainerClick = useCallback((event: React.MouseEvent) => {
-    // Only handle clicks on the container itself (empty space)
-    if (event.target === containerRef.current) {
-      onHighlight(null);
-    }
-  }, [onHighlight]);
+  const handleContainerClick = useCallback(
+    (event: React.MouseEvent) => {
+      // Only handle clicks on the container itself (empty space)
+      if (event.target === containerRef.current) {
+        onHighlight(null);
+      }
+    },
+    [onHighlight]
+  );
 
   // Cleanup timers on unmount
   React.useEffect(() => {
@@ -296,7 +331,13 @@ export default function FileList({
   }, []);
   if (loading) {
     return (
-      <div className={viewMode === "list" ? "glass rounded-xl overflow-hidden" : "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-3 sm:gap-4 md:gap-6"}>
+      <div
+        className={
+          viewMode === "list"
+            ? "glass rounded-xl overflow-hidden"
+            : "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-3 sm:gap-4 md:gap-6"
+        }
+      >
         {viewMode === "list" ? (
           <>
             <div className="hidden sm:grid grid-cols-12 gap-4 p-4 md:p-6 bg-slate-100/80 dark:bg-white/5 border-b border-slate-200 dark:border-white/10 text-sm font-medium text-slate-700 dark:text-slate-200">
@@ -307,13 +348,22 @@ export default function FileList({
             </div>
             <div className="divide-y divide-slate-200 dark:divide-white/5">
               {Array.from({ length: 8 }).map((_, i) => (
-                <div key={i} className="flex sm:grid sm:grid-cols-12 gap-3 sm:gap-4 p-3 sm:p-4 md:p-6">
+                <div
+                  key={i}
+                  className="flex sm:grid sm:grid-cols-12 gap-3 sm:gap-4 p-3 sm:p-4 md:p-6"
+                >
                   <div className="flex-1 sm:col-span-6 flex items-center space-x-3 sm:space-x-4">
                     <div className="w-5 h-5 bg-slate-200 dark:bg-slate-700 rounded animate-pulse"></div>
                     <div className="w-10 h-10 bg-slate-200 dark:bg-slate-700 rounded-lg animate-pulse"></div>
                     <div className="flex-1 space-y-2">
-                      <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded animate-pulse" style={{width: `${60 + Math.random() * 40}%`}}></div>
-                      <div className="h-3 bg-slate-100 dark:bg-slate-800 rounded animate-pulse sm:hidden" style={{width: `${40 + Math.random() * 30}%`}}></div>
+                      <div
+                        className="h-4 bg-slate-200 dark:bg-slate-700 rounded animate-pulse"
+                        style={{ width: `${60 + Math.random() * 40}%` }}
+                      ></div>
+                      <div
+                        className="h-3 bg-slate-100 dark:bg-slate-800 rounded animate-pulse sm:hidden"
+                        style={{ width: `${40 + Math.random() * 30}%` }}
+                      ></div>
                     </div>
                   </div>
                   <div className="hidden sm:flex sm:col-span-2 items-center">
@@ -331,13 +381,22 @@ export default function FileList({
           </>
         ) : (
           Array.from({ length: 12 }).map((_, i) => (
-            <div key={i} className="glass rounded-xl p-3 sm:p-4 md:p-6 text-center">
+            <div
+              key={i}
+              className="glass rounded-xl p-3 sm:p-4 md:p-6 text-center"
+            >
               <div className="flex justify-center mb-2 sm:mb-3 md:mb-4">
                 <div className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 bg-slate-200 dark:bg-slate-700 rounded-lg animate-pulse"></div>
               </div>
               <div className="space-y-1 sm:space-y-2">
-                <div className="h-3 sm:h-4 bg-slate-200 dark:bg-slate-700 rounded animate-pulse mx-auto" style={{width: `${50 + Math.random() * 40}%`}}></div>
-                <div className="h-3 bg-slate-100 dark:bg-slate-800 rounded animate-pulse mx-auto hidden sm:block" style={{width: `${30 + Math.random() * 30}%`}}></div>
+                <div
+                  className="h-3 sm:h-4 bg-slate-200 dark:bg-slate-700 rounded animate-pulse mx-auto"
+                  style={{ width: `${50 + Math.random() * 40}%` }}
+                ></div>
+                <div
+                  className="h-3 bg-slate-100 dark:bg-slate-800 rounded animate-pulse mx-auto hidden sm:block"
+                  style={{ width: `${30 + Math.random() * 30}%` }}
+                ></div>
               </div>
               <div className="absolute top-3 right-3">
                 <div className="w-4 h-4 bg-slate-200 dark:bg-slate-700 rounded animate-pulse"></div>
@@ -351,7 +410,11 @@ export default function FileList({
 
   if (viewMode === "list") {
     return (
-      <div className="glass rounded-xl overflow-hidden" ref={containerRef} onClick={handleContainerClick}>
+      <div
+        className="glass rounded-xl overflow-hidden"
+        ref={containerRef}
+        onClick={handleContainerClick}
+      >
         <div className="hidden sm:grid grid-cols-12 gap-4 p-4 md:p-6 bg-slate-100/80 dark:bg-white/5 border-b border-slate-200 dark:border-white/10 text-sm font-medium text-slate-700 dark:text-slate-200">
           <div className="col-span-6">Name</div>
           <div className="col-span-2 hidden md:block">Type</div>
@@ -359,10 +422,11 @@ export default function FileList({
           <div className="col-span-2 hidden xl:block">Modified</div>
         </div>
         <div className="divide-y divide-slate-200 dark:divide-white/5">
-          {items.map((item, index) => {
+          {uniqueItems.map((item, index) => {
             const isSelected = selectedItems.has(item.name);
             const isHighlighted = highlightedItem === item.name;
-            const showBlueBorder = isSelected || (isHighlighted && selectedItems.size === 0);
+            const showBlueBorder =
+              isSelected || (isHighlighted && selectedItems.size === 0);
             return (
               <div
                 key={item.name}
@@ -411,8 +475,16 @@ export default function FileList({
                     />
                     {isSelected && (
                       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                        <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        <svg
+                          className="w-3 h-3 text-white"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                            clipRule="evenodd"
+                          />
                         </svg>
                       </div>
                     )}
@@ -483,17 +555,40 @@ export default function FileList({
             );
           })}
         </div>
+
+        {/* Infinite scroll loading indicator */}
+        {(hasMore || loadingMore) && (
+          <div ref={loadingRef} className="flex justify-center p-4">
+            {loadingMore ? (
+              <div className="flex items-center space-x-2">
+                <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                <span className="text-sm text-slate-500 dark:text-slate-400">
+                  Loading more items...
+                </span>
+              </div>
+            ) : hasMore ? (
+              <div className="text-sm text-slate-500 dark:text-slate-400">
+                Scroll down to load more
+              </div>
+            ) : null}
+          </div>
+        )}
       </div>
     );
   }
 
   // Grid view - Clean Card Design
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-3 sm:gap-4 md:gap-6" ref={containerRef} onClick={handleContainerClick}>
-      {items.map((item, index) => {
+    <div
+      className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-3 sm:gap-4 md:gap-6"
+      ref={containerRef}
+      onClick={handleContainerClick}
+    >
+      {uniqueItems.map((item, index) => {
         const isSelected = selectedItems.has(item.name);
         const isHighlighted = highlightedItem === item.name;
-        const showBlueBorder = isSelected || (isHighlighted && selectedItems.size === 0);
+        const showBlueBorder =
+          isSelected || (isHighlighted && selectedItems.size === 0);
         return (
           <div
             key={item.name}
@@ -556,7 +651,9 @@ export default function FileList({
                     }
                     // Return scaled icon for different screen sizes
                     const IconComponent = getFileIcon(item).type;
-                    const iconClasses = getFileIcon(item).props.className.replace(
+                    const iconClasses = getFileIcon(
+                      item
+                    ).props.className.replace(
                       "h-10 w-10",
                       "h-8 w-8 sm:h-9 sm:w-9 md:h-10 md:w-10"
                     );
@@ -614,8 +711,16 @@ export default function FileList({
                 />
                 {isSelected && (
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    <svg
+                      className="w-2.5 h-2.5 text-white"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                        clipRule="evenodd"
+                      />
                     </svg>
                   </div>
                 )}
@@ -624,6 +729,24 @@ export default function FileList({
           </div>
         );
       })}
+
+      {/* Infinite scroll loading indicator for grid view */}
+      {(hasMore || loadingMore) && (
+        <div ref={loadingRef} className="col-span-full flex justify-center p-8">
+          {loadingMore ? (
+            <div className="flex items-center space-x-2">
+              <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+              <span className="text-sm text-slate-500 dark:text-slate-400">
+                Loading more items...
+              </span>
+            </div>
+          ) : hasMore ? (
+            <div className="text-sm text-slate-500 dark:text-slate-400">
+              Scroll down to load more
+            </div>
+          ) : null}
+        </div>
+      )}
     </div>
   );
 }

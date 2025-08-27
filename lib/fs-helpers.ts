@@ -28,11 +28,7 @@ export async function listDir(userPath = "/") {
         type: e.isDirectory() ? "dir" : "file",
         size: e.isDirectory() ? undefined : s.size,
         mtime: s.mtimeMs,
-        url: e.isDirectory()
-          ? null
-          : `${PUBLIC_FILES_BASE}${
-              relPath.startsWith("/") ? "" : "/"
-            }${relPath}`,
+        url: e.isDirectory() ? null : buildPublicFileUrl(relPath),
       };
     })
   );
@@ -49,4 +45,17 @@ export function errorJSON(msg: string, status = 400) {
     status,
     headers: { "Content-Type": "application/json" },
   });
+}
+
+// Encode a file system path for safe use in URLs, preserving slashes between segments
+export function encodePathForUrl(userPath: string = "/"): string {
+  const parts = (userPath || "/").split("/").filter(Boolean);
+  // Always ensure a single leading slash
+  const encoded = parts.map(encodeURIComponent).join("/");
+  return "/" + encoded;
+}
+
+// Build a public URL under /files for a given user path, with proper encoding
+export function buildPublicFileUrl(userPath: string): string {
+  return `${PUBLIC_FILES_BASE}${encodePathForUrl(userPath)}`;
 }
