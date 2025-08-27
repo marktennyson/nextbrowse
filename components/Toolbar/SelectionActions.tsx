@@ -5,6 +5,7 @@ import {
   DocumentDuplicateIcon,
   TrashIcon,
   XMarkIcon,
+  CheckIcon,
 } from "@heroicons/react/24/outline";
 
 interface SelectionActionsProps {
@@ -13,6 +14,7 @@ interface SelectionActionsProps {
   onCopy: () => void;
   onDelete: () => void;
   onClearSelection: () => void;
+  onSelectAll: () => void;
 }
 
 export default function SelectionActions({
@@ -21,8 +23,19 @@ export default function SelectionActions({
   onCopy,
   onDelete,
   onClearSelection,
+  onSelectAll,
 }: SelectionActionsProps) {
-  if (selectedCount === 0) return null;
+  if (selectedCount === 0) {
+    return (
+      <button
+        onClick={onSelectAll}
+        className="group text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200 p-1 sm:p-2 rounded-md hover:bg-blue-50 dark:hover:bg-blue-900/20"
+        title="Select all items"
+      >
+        <CheckIcon className="h-3 w-3 sm:h-4 sm:w-4 transition-transform duration-200 group-hover:scale-110" />
+      </button>
+    );
+  }
 
   return (
     <div className="flex items-center gap-1 sm:gap-2 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-700 rounded-md sm:rounded-lg p-1 sm:p-2 shadow-sm">

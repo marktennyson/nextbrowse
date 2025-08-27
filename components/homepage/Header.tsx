@@ -1,5 +1,6 @@
 import Breadcrumbs from "@/components/Breadcrumbs";
 import ThemeToggle from "@/components/ThemeToggle";
+import SearchInput from "@/components/Toolbar/SearchInput";
 import Link from "next/link";
 import { CodeBracketIcon } from "@heroicons/react/24/outline";
 
@@ -7,19 +8,23 @@ interface HeaderProps {
   currentPath: string;
   filteredItemsCount: number;
   selectedItemsCount: number;
+  searchQuery: string;
   onNavigate: (path: string) => void;
+  onSearchChange: (query: string) => void;
 }
 
 export default function Header({
   currentPath,
   filteredItemsCount,
   selectedItemsCount,
+  searchQuery,
   onNavigate,
+  onSearchChange,
 }: HeaderProps) {
   return (
     <div className="glass border-b border-slate-200 dark:border-white/10 px-3 sm:px-4 py-2">
       <div className="flex items-center justify-between gap-2 min-h-[2.5rem]">
-        {/* Left: Brand + Breadcrumbs */}
+        {/* Left: Brand + Breadcrumbs + Search */}
         <div className="flex items-center gap-2 min-w-0 flex-1">
           <div className="w-7 h-7 bg-blue-100 dark:bg-white/10 rounded-md flex items-center justify-center shrink-0">
             <span className="text-blue-600 dark:text-white font-bold text-sm">
@@ -29,6 +34,12 @@ export default function Header({
           <div className="hidden sm:block w-px h-5 bg-slate-300 dark:bg-white/20 mx-1"></div>
           <div className="min-w-0 flex-1">
             <Breadcrumbs path={currentPath} onNavigate={onNavigate} />
+          </div>
+          <div className="hidden lg:block">
+            <SearchInput 
+              searchQuery={searchQuery}
+              onSearchChange={onSearchChange}
+            />
           </div>
         </div>
 

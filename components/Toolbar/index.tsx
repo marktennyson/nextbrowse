@@ -5,11 +5,9 @@ import React from "react";
 import NavigationButtons from "./NavigationButtons";
 import CreateFolderButton from "./CreateFolderButton";
 import SelectionActions from "./SelectionActions";
-import SearchInput from "./SearchInput";
 import ViewModeToggle from "./ViewModeToggle";
 import SortControl from "./SortControl";
 import HiddenFilesToggle from "./HiddenFilesToggle";
-import SelectAllButton from "./SelectAllButton";
 import Divider from "./Divider";
 
 interface ToolbarProps {
@@ -17,14 +15,12 @@ interface ToolbarProps {
   viewMode: "grid" | "list";
   sortBy: "name" | "type" | "size" | "date";
   sortOrder: "asc" | "desc";
-  searchQuery: string;
   showHidden: boolean;
   onViewModeChange: (mode: "grid" | "list") => void;
   onSortChange: (
     by: "name" | "type" | "size" | "date",
     order: "asc" | "desc"
   ) => void;
-  onSearchChange: (query: string) => void;
   onToggleHidden: () => void;
   onSelectAll: () => void;
   onClearSelection: () => void;
@@ -42,11 +38,9 @@ export default function Toolbar({
   viewMode,
   sortBy,
   sortOrder,
-  searchQuery,
   showHidden,
   onViewModeChange,
   onSortChange,
-  onSearchChange,
   onToggleHidden,
   onSelectAll,
   onClearSelection,
@@ -81,20 +75,14 @@ export default function Toolbar({
               onCopy={onCopy}
               onDelete={onDelete}
               onClearSelection={onClearSelection}
+              onSelectAll={onSelectAll}
             />
 
             {selectedCount > 0 && <Divider className="mx-0.5 sm:mx-1" />}
           </div>
 
-          {/* Right side - Search, View & Sort Controls */}
+          {/* Right side - View & Sort Controls */}
           <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3 flex-wrap">
-            <SearchInput
-              searchQuery={searchQuery}
-              onSearchChange={onSearchChange}
-            />
-
-            <Divider />
-
             <ViewModeToggle
               viewMode={viewMode}
               onViewModeChange={onViewModeChange}
@@ -106,17 +94,13 @@ export default function Toolbar({
               onSortChange={onSortChange}
             />
 
+
             <HiddenFilesToggle
               showHidden={showHidden}
               onToggleHidden={onToggleHidden}
             />
           </div>
         </div>
-
-        <SelectAllButton
-          selectedCount={selectedCount}
-          onSelectAll={onSelectAll}
-        />
       </div>
     </div>
   );

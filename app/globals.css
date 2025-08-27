@@ -137,9 +137,9 @@ body {
   box-shadow: none;
 }
 
-/* Interactive elements (gentle) */
+/* Interactive elements (gentle with smoother transitions) */
 .interactive {
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
 }
 
@@ -250,16 +250,47 @@ body {
   color: #64748b !important; /* slate-500 */
 }
 
-/* File selection styles - theme aware */
+/* File selection styles - theme aware with enhanced feedback */
 .file-item-selected {
   background: var(--selected-bg);
   border: 2px solid var(--selected-border);
+  position: relative;
+  box-shadow: 0 0 0 1px var(--selected-border);
+  animation: selection-pulse 2s ease-in-out;
 }
 
-/* Interactive hover effects */
+.file-item-selected::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--primary), var(--secondary));
+  border-radius: 4px 4px 0 0;
+}
+
+/* Enhanced hover effects for file items */
+.file-item-hover {
+  background: var(--hover-bg);
+  border-color: var(--border);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.dark .file-item-hover {
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+}
+
+/* Enhanced interactive hover effects with smoother transitions */
 .interactive:hover {
   transform: translateY(-1px);
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.interactive:active {
+  transform: translateY(0);
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 :root:not(.dark) .interactive:hover {
@@ -270,11 +301,65 @@ body {
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
 }
 
-/* Context menu animation */
+/* Add subtle animations for file items */
+@keyframes file-item-appear {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.file-item-animate {
+  animation: file-item-appear 0.3s ease-out;
+}
+
+/* Double-click hint tooltip */
+.double-click-hint {
+  position: absolute;
+  bottom: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  z-index: 50;
+}
+
+.dark .double-click-hint {
+  background: rgba(255, 255, 255, 0.9);
+  color: black;
+}
+
+.group:hover .double-click-hint {
+  opacity: 1;
+}
+
+/* Pulse animation for selected items */
+@keyframes selection-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 1px var(--selected-border);
+  }
+  50% {
+    box-shadow: 0 0 0 3px var(--selected-border);
+  }
+}
+
+/* Context menu animation with smoother easing */
 @keyframes context-menu-appear {
   from {
     opacity: 0;
-    transform: scale(0.98) translateY(-4px);
+    transform: scale(0.96) translateY(-8px);
   }
   to {
     opacity: 1;
@@ -283,7 +368,37 @@ body {
 }
 
 .context-menu {
-  animation: context-menu-appear 0.12s ease-out;
+  animation: context-menu-appear 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Modal/Dialog animations */
+@keyframes modal-appear {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.modal-animate {
+  animation: modal-appear 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Backdrop fade animation */
+@keyframes backdrop-appear {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.backdrop-animate {
+  animation: backdrop-appear 0.2s ease-out;
 }
 
 /* Upload animation delays */
@@ -299,12 +414,12 @@ body {
   animation-delay: 0.3s;
 }
 
-/* Theme-aware form elements */
+/* Theme-aware form elements with smoother transitions */
 button,
 input,
 select,
 textarea {
-  transition: all 0.15s ease-in-out;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Light theme form styles */
@@ -330,14 +445,12 @@ input.bg-transparent {
   border: none !important;
   outline: none !important;
   box-shadow: none !important;
-  ring: none !important;
 }
 
 input.bg-transparent:focus {
   border: none !important;
   outline: none !important;
   box-shadow: none !important;
-  ring: none !important;
 }
 
 :root:not(.dark) button {
@@ -392,4 +505,30 @@ input.bg-transparent:focus {
 
 .dark .animate-pulse > div {
   background: linear-gradient(90deg, #374151, #4b5563, #374151);
+}
+
+/* Prevent text selection on file items */
+.file-item-no-select {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Prevent hover styles from overriding blue border */
+.file-item-blue-border:hover {
+  border-color: #3b82f6 !important; /* blue-500 */
+}
+
+.dark .file-item-blue-border:hover {
+  border-color: #60a5fa !important; /* blue-400 */
+}
+
+/* Allow text selection only for text content when editing */
+.file-item-no-select input,
+.file-item-no-select textarea {
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
 }

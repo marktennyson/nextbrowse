@@ -43,6 +43,7 @@ export default function FileManager() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
+  const [highlightedItem, setHighlightedItem] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [sortBy, setSortBy] = useState<"name" | "type" | "size" | "date">(
     "name"
@@ -126,6 +127,7 @@ export default function FileManager() {
         : `${currentPath}/${path}`.replace(/\/+/g, "/");
       setCurrentPath(newPath);
       setSelectedItems(new Set());
+      setHighlightedItem(null);
       setCurrentPage(1);
     },
     [currentPath]
@@ -148,6 +150,11 @@ export default function FileManager() {
       }
       return newSet;
     });
+  }, []);
+
+  // File highlighting (visual only, not actual selection)
+  const highlightItem = useCallback((item: FileItem | null) => {
+    setHighlightedItem(item?.name || null);
   }, []);
 
   // Filtering and sorting
@@ -493,7 +500,9 @@ export default function FileManager() {
         currentPath={currentPath}
         filteredItemsCount={filteredItems.length}
         selectedItemsCount={selectedItems.size}
+        searchQuery={searchQuery}
         onNavigate={navigate}
+        onSearchChange={setSearchQuery}
       />
 
       <div className="max-w-full mx-auto px-3 sm:px-4 py-3">
@@ -502,14 +511,12 @@ export default function FileManager() {
           viewMode={viewMode}
           sortBy={sortBy}
           sortOrder={sortOrder}
-          searchQuery={searchQuery}
           showHidden={showHidden}
           onViewModeChange={setViewMode}
           onSortChange={(by: string, order: string) => {
             setSortBy(by as "name" | "type" | "size" | "date");
             setSortOrder(order as "asc" | "desc");
           }}
-          onSearchChange={setSearchQuery}
           onToggleHidden={() => setShowHidden(!showHidden)}
           onSelectAll={selectAll}
           onClearSelection={clearSelection}
@@ -561,9 +568,11 @@ export default function FileManager() {
           <FileList
             items={filteredItems}
             selectedItems={selectedItems}
+            highlightedItem={highlightedItem}
             viewMode={viewMode}
             onNavigate={navigate}
             onSelect={selectItem}
+            onHighlight={highlightItem}
             onContextMenu={handleContextMenu}
             onImageClick={(item) => openImageViewer(item, filteredItems)}
             onFileEdit={handleFileEdit}
