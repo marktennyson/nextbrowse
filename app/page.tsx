@@ -1,9 +1,12 @@
 import { FileManager, FileOperationsProvider } from "@/components/homepage";
+import { NextPage } from "next";
 
-export default function HomePage() {
+const HomePage: NextPage = () => {
   return (
     <FileOperationsProvider>
       <FileManager />
     </FileOperationsProvider>
   );
-}
+};
+
+export default HomePage;
