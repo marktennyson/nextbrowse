@@ -30,6 +30,7 @@ func main() {
 	fs := r.Group("/api/fs")
 	{
 		fs.GET("/list", handlers.ListDirectory)
+		fs.GET("/read", handlers.ReadFile)
 		fs.POST("/upload", handlers.UploadFiles)
 		fs.POST("/copy", handlers.CopyFile)
 		fs.POST("/move", handlers.MoveFile)

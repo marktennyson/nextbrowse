@@ -23,6 +23,12 @@ export const apiClient = {
     return response.json()
   },
 
+  // File read
+  async readFile(path: string) {
+    const response = await fetch(`${API_BASE_URL}/api/fs/read?path=${encodeURIComponent(path)}`)
+    return response.json()
+  },
+
   // File upload
   async uploadFiles(path: string, files: FileList) {
     const formData = new FormData()
@@ -76,10 +82,12 @@ export const apiClient = {
     return response.json()
   },
 
-  // Download
+  // Download - Use nginx direct serving for better performance
   getDownloadUrl(path: string) {
-    const params = new URLSearchParams({ path })
-    return `${API_BASE_URL}/api/fs/download?${params}`
+    // Use nginx /download/ endpoint for direct file serving
+    // Path should be relative to the static directory
+    const cleanPath = path.startsWith('/') ? path.slice(1) : path
+    return `/download/${cleanPath}`
   },
 
   async downloadMultiple(files: string[]) {

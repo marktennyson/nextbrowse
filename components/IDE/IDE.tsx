@@ -11,6 +11,7 @@ import FileTree from "./FileTree";
 import FileTab from "./FileTab";
 import StatusBar from "./StatusBar";
 import { getFileLanguage, isTextFile } from "@/lib/file-utils";
+import { apiClient } from "@/lib/api-client";
 
 interface OpenFile {
   path: string;
@@ -60,10 +61,7 @@ export default function IDE({
 
       setIsLoading(true);
       try {
-        const response = await fetch(
-          `/api/fs/read?path=${encodeURIComponent(path)}`
-        );
-        const data = await response.json();
+        const data = await apiClient.readFile(path);
 
         if (!data.ok) {
           throw new Error(data.error || "Failed to load file");

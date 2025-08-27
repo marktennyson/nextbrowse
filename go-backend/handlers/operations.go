@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"io"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -27,6 +28,14 @@ type MkdirRequest struct {
 type OperationResponse struct {
 	OK      bool   `json:"ok"`
 	Message string `json:"message"`
+	Error   string `json:"error,omitempty"`
+}
+
+type ReadFileResponse struct {
+	OK      bool   `json:"ok"`
+	Content string `json:"content"`
+	Size    int64  `json:"size"`
+	Mtime   int64  `json:"mtime"`
 	Error   string `json:"error,omitempty"`
 }
 
@@ -356,4 +365,70 @@ func copyRecursive(src, dst string) error {
 	}
 
 	return nil
+}
+
+func ReadFile(c *gin.Context) {
+	path := c.Query("path")
+	if path == "" {
+		c.JSON(http.StatusBadRequest, ReadFileResponse{
+			OK:    false,
+			Error: "Missing path parameter",
+		})
+		return
+	}
+
+	// Safely resolve path
+	safePath, err := utils.SafeResolve(path)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, ReadFileResponse{
+			OK:    false,
+			Error: err.Error(),
+		})
+		return
+	}
+
+	// Check if path exists and is a file
+	fileInfo, err := os.Stat(safePath)
+	if err != nil {
+		c.JSON(http.StatusNotFound, ReadFileResponse{
+			OK:    false,
+			Error: "File not found",
+		})
+		return
+	}
+
+	if fileInfo.IsDir() {
+		c.JSON(http.StatusBadRequest, ReadFileResponse{
+			OK:    false,
+			Error: "Path is a directory, not a file",
+		})
+		return
+	}
+
+	// Read file content
+	file, err := os.Open(safePath)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, ReadFileResponse{
+			OK:    false,
+			Error: "Failed to open file: " + err.Error(),
+		})
+		return
+	}
+	defer file.Close()
+
+	content, err := io.ReadAll(file)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, ReadFileResponse{
+			OK:    false,
+			Error: "Failed to read file: " + err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, ReadFileResponse{
+		OK:      true,
+		Content: string(content),
+		Size:    fileInfo.Size(),
+		Mtime:   fileInfo.ModTime().Unix(),
+	})
 }
