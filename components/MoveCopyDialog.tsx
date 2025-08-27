@@ -65,7 +65,6 @@ export default function MoveCopyDialog({
       clearTimeout(t);
       abortRef.current?.abort();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, currentPath]);
 
   async function loadDirectories(path: string): Promise<void> {

@@ -1,7 +1,7 @@
 import { promises as fsp } from "fs";
 import path from "path";
 
-const ROOT = process.env.ROOT_DIR || "/mnt/storage";
+const ROOT = process.env.ROOT_DIR || "/app/static";
 export const PUBLIC_FILES_BASE = "/files";
 
 export function safeResolve(userPath = "/") {
