@@ -4,6 +4,7 @@ import React from "react";
 // Import all toolbar components
 import NavigationButtons from "./NavigationButtons";
 import CreateFolderButton from "./CreateFolderButton";
+import UploadButton from "./UploadButton";
 import SelectionActions from "./SelectionActions";
 import ViewModeToggle from "./ViewModeToggle";
 import SortControl from "./SortControl";
@@ -32,6 +33,7 @@ interface ToolbarProps {
   onCopy: () => void;
   onDownload: () => void;
   onCreateFolder: (name: string) => void;
+  onUpload: (files: FileList) => void;
   onRefresh: () => void;
   onNavigateUp: () => void;
   onPlayAllAudio?: () => void;
@@ -57,6 +59,7 @@ export default function Toolbar({
   onCopy,
   onDownload,
   onCreateFolder,
+  onUpload,
   onRefresh,
   onNavigateUp,
   onPlayAllAudio,
@@ -79,6 +82,8 @@ export default function Toolbar({
             <Divider className="mx-0.5 sm:mx-1" />
 
             <CreateFolderButton onCreateFolder={onCreateFolder} />
+            
+            <UploadButton onFilesSelected={onUpload} />
 
             <PlayAudioButton
               audioCount={audioCount}

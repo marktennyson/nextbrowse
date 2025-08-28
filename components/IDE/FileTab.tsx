@@ -9,6 +9,8 @@ interface FileTabProps {
   isDirty: boolean;
   onClick: () => void;
   onClose: () => void;
+  onCloseOthers: () => void;
+  onCloseAll: () => void;
 }
 
 export default function FileTab({
@@ -17,6 +19,8 @@ export default function FileTab({
   isDirty,
   onClick,
   onClose,
+  onCloseOthers,
+  onCloseAll,
 }: FileTabProps) {
   const fileName = path.split("/").pop() || "";
   const Icon = getFileIcon(fileName);
@@ -24,6 +28,11 @@ export default function FileTab({
   const handleClose = (e: React.MouseEvent) => {
     e.stopPropagation();
     onClose();
+  };
+
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
   };
 
   return (
@@ -38,6 +47,7 @@ export default function FileTab({
         }
       `}
       onClick={onClick}
+      onContextMenu={handleContextMenu}
       title={path}
     >
       <Icon className="w-4 h-4 mr-2 flex-shrink-0" />
@@ -51,6 +61,7 @@ export default function FileTab({
       )}
       
       <button
+        type="button"
         className={`
           ml-1 p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity
           hover:bg-gray-200 dark:hover:bg-gray-600 flex-shrink-0

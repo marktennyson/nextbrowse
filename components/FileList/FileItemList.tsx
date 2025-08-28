@@ -76,6 +76,7 @@ export default function FileItemList({
               <div className="flex-1 sm:col-span-6 flex items-center space-x-3 sm:space-x-4">
                 <div className="relative">
                   <input
+                    title="select-items"
                     type="checkbox"
                     checked={isSelected}
                     onChange={(e) => {
