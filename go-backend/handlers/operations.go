@@ -3,8 +3,10 @@ package handlers
 import (
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 
@@ -203,24 +205,35 @@ func MoveFile(c *gin.Context) {
 
 func DeleteFile(c *gin.Context) {
 	var req DeleteRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"ok":    false,
-			"error": "Invalid request body",
-		})
+	_ = c.ShouldBindJSON(&req) // try bind JSON, but don't fail if not JSON
+
+	path := req.Path
+	if path == "" {
+		// Fallback to query or form for clients that cannot send DELETE bodies
+		path = c.Query("path")
+		if path == "" {
+			path = c.PostForm("path")
+		}
+	}
+
+	if path == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"ok": false, "error": "Missing path"})
 		return
 	}
 
-	if req.Path == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"ok":    false,
-			"error": "Missing path",
-		})
-		return
+	// Normalize optional public prefix and URL-decode if necessary
+	if strings.HasPrefix(path, "/files/") {
+		path = strings.TrimPrefix(path, "/files")
+	}
+	if strings.HasPrefix(path, "/download/") {
+		path = strings.TrimPrefix(path, "/download")
+	}
+	if unesc, err := url.PathUnescape(path); err == nil {
+		path = unesc
 	}
 
 	// Safely resolve path
-	safePath, err := utils.SafeResolve(req.Path)
+	safePath, err := utils.SafeResolve(path)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"ok":    false,

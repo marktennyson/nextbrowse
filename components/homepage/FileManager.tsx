@@ -6,7 +6,7 @@ import Toolbar from "@/components/Toolbar";
 import UploadDropzone from "@/components/UploadDropzone";
 import GlobalDropzone from "@/components/GlobalDropzone";
 import { FileValidator } from "@/lib/file-validator";
-import { parseJsonResponse, handleErrorResponse } from "@/lib/api-helpers";
+import { handleErrorResponse } from "@/lib/api-helpers";
 import { apiClient } from "@/lib/api-client";
 import Header from "./Header";
 import ErrorMessage from "./ErrorMessage";
@@ -91,42 +91,47 @@ export default function FileManager() {
   const { playTrack, playFromSelection, playFolder } = useMusicPlayer();
 
   // Load directory contents with infinite scroll
-  const loadDirectory = useCallback(async (path: string, reset: boolean = false, offset: number = 0) => {
-    if (reset) {
-      setLoading(true);
-      setAllItems([]);
-      setCurrentOffset(0);
-      setHasMore(true);
-    } else {
-      setLoadingMore(true);
-    }
-    setError(null);
-
-    try {
-      const data = await apiClient.listDirectory(path, {
-        offset,
-        limit: ITEMS_PER_LOAD
-      }) as DirectoryData;
-
-      if (data.ok) {
-        if (reset) {
-          setAllItems(data.items);
-        } else {
-          setAllItems(prev => [...prev, ...data.items]);
-        }
-        setCurrentPath(data.path);
-        setHasMore(data.pagination?.hasMore || false);
-        setCurrentOffset(data.pagination?.nextOffset || offset + data.items.length);
+  const loadDirectory = useCallback(
+    async (path: string, reset: boolean = false, offset: number = 0) => {
+      if (reset) {
+        setLoading(true);
+        setAllItems([]);
+        setCurrentOffset(0);
+        setHasMore(true);
       } else {
-        setError(data.error || "Failed to load directory");
+        setLoadingMore(true);
       }
-    } catch {
-      setError("Network error while loading directory");
-    } finally {
-      setLoading(false);
-      setLoadingMore(false);
-    }
-  }, [ITEMS_PER_LOAD]);
+      setError(null);
+
+      try {
+        const data = (await apiClient.listDirectory(path, {
+          offset,
+          limit: ITEMS_PER_LOAD,
+        })) as DirectoryData;
+
+        if (data.ok) {
+          if (reset) {
+            setAllItems(data.items);
+          } else {
+            setAllItems((prev) => [...prev, ...data.items]);
+          }
+          setCurrentPath(data.path);
+          setHasMore(data.pagination?.hasMore || false);
+          setCurrentOffset(
+            data.pagination?.nextOffset || offset + data.items.length
+          );
+        } else {
+          setError(data.error || "Failed to load directory");
+        }
+      } catch {
+        setError("Network error while loading directory");
+      } finally {
+        setLoading(false);
+        setLoadingMore(false);
+      }
+    },
+    [ITEMS_PER_LOAD]
+  );
 
   // Load more items for infinite scroll
   const loadMoreItems = useCallback(() => {
@@ -219,8 +224,10 @@ export default function FileManager() {
   // Count audio files
   const audioFiles = filteredItems.filter(isAudioFile);
   const selectedAudioFiles = Array.from(selectedItems)
-    .map(name => filteredItems.find(item => item.name === name))
-    .filter((item): item is FileItem => item !== undefined && isAudioFile(item));
+    .map((name) => filteredItems.find((item) => item.name === name))
+    .filter(
+      (item): item is FileItem => item !== undefined && isAudioFile(item)
+    );
 
   const selectAll = useCallback(() => {
     setSelectedItems(new Set(filteredItems.map((item) => item.name)));
@@ -244,15 +251,18 @@ export default function FileManager() {
   }, [selectedAudioFiles, currentPath, playFromSelection]);
 
   // Handle double-click on audio file
-  const handleAudioPlay = useCallback((item: FileItem) => {
-    const audioTrack = {
-      name: item.name.replace(/\.[^/.]+$/, ""),
-      url: item.url || `${currentPath}/${item.name}`.replace(/\/+/g, "/"),
-      path: `${currentPath}/${item.name}`.replace(/\/+/g, "/"),
-      duration: undefined,
-    };
-    playTrack(audioTrack, filteredItems, currentPath);
-  }, [currentPath, filteredItems, playTrack]);
+  const handleAudioPlay = useCallback(
+    (item: FileItem) => {
+      const audioTrack = {
+        name: item.name.replace(/\.[^/.]+$/, ""),
+        url: item.url || `${currentPath}/${item.name}`.replace(/\/+/g, "/"),
+        path: `${currentPath}/${item.name}`.replace(/\/+/g, "/"),
+        duration: undefined,
+      };
+      playTrack(audioTrack, filteredItems, currentPath);
+    },
+    [currentPath, filteredItems, playTrack]
+  );
 
   // File operations
   const deleteSelected = useCallback(async () => {
@@ -281,39 +291,43 @@ export default function FileManager() {
 
   const downloadSelected = useCallback(async () => {
     const itemsToDownload = Array.from(selectedItems);
-    
+
     if (itemsToDownload.length === 0) return;
-    
+
     if (itemsToDownload.length === 1) {
       // Single item download
       const itemName = itemsToDownload[0];
       const itemPath = `${currentPath}/${itemName}`.replace(/\/+/g, "/");
-      const downloadUrl = `/api/fs/download?path=${encodeURIComponent(itemPath)}`;
-      
+      const downloadUrl = `/api/fs/download?path=${encodeURIComponent(
+        itemPath
+      )}`;
+
       const link = document.createElement("a");
       link.href = downloadUrl;
-      const item = allItems.find(i => i.name === itemName);
+      const item = allItems.find((i) => i.name === itemName);
       link.download = item?.type === "dir" ? `${itemName}.zip` : itemName;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
     } else {
       // Multiple items download - create a temporary ZIP
-      const zipName = `${allItems.length > 1 ? 'selected-items' : 'download'}.zip`;
-      
+      const zipName = `${
+        allItems.length > 1 ? "selected-items" : "download"
+      }.zip`;
+
       try {
         const response = await fetch("/api/fs/download-multiple", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            items: itemsToDownload.map(itemName => ({
+            items: itemsToDownload.map((itemName) => ({
               name: itemName,
-              path: `${currentPath}/${itemName}`.replace(/\/+/g, "/")
+              path: `${currentPath}/${itemName}`.replace(/\/+/g, "/"),
             })),
-            basePath: currentPath
+            basePath: currentPath,
           }),
         });
-        
+
         if (response.ok) {
           const blob = await response.blob();
           const url = window.URL.createObjectURL(blob);
@@ -331,7 +345,7 @@ export default function FileManager() {
         setError(err instanceof Error ? err.message : "Download failed");
       }
     }
-    
+
     // Clear selection after download
     setSelectedItems(new Set());
   }, [selectedItems, currentPath, allItems]);
@@ -391,44 +405,26 @@ export default function FileManager() {
     [currentPath, loadDirectory]
   );
 
-  // File upload with validation
-  const handleUpload = useCallback(
-    async (files: FileList) => {
-      // Validate files before upload
-      const validation = FileValidator.validate(files, {
-        maxFileSize: 100 * 1024 * 1024 * 1024, // 100GB
-        maxFiles: 50,
-        requireUniqueNames: false,
-      });
+  // File upload with validation: delegate actual upload to UploadDropzone's UploadManager via CustomEvent
+  const handleUpload = useCallback(async (files: FileList) => {
+    const validation = FileValidator.validate(files, {
+      maxFileSize: 100 * 1024 * 1024 * 1024, // 100GB
+      maxFiles: 5000,
+      requireUniqueNames: false,
+    });
 
-      if (!validation.valid) {
-        setError(`Upload validation failed: ${validation.errors.join(', ')}`);
-        return;
-      }
+    if (!validation.valid) {
+      setError(`Upload validation failed: ${validation.errors.join(", ")}`);
+      return;
+    }
+    if (validation.warnings.length > 0) {
+      console.warn("Upload warnings:", validation.warnings);
+    }
 
-      if (validation.warnings.length > 0) {
-        console.warn('Upload warnings:', validation.warnings);
-      }
-
-      // Upload using Go backend
-      try {
-        const response = await apiClient.uploadFiles(currentPath, files);
-
-        if (!response.ok) {
-          let errorMessage = response.error || "Upload failed";
-          if (response.errors && response.errors.length > 0) {
-            errorMessage += ": " + response.errors.join(", ");
-          }
-          throw new Error(errorMessage);
-        }
-
-        await loadDirectory(currentPath, true, 0);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Upload failed");
-      }
-    },
-    [currentPath, loadDirectory]
-  );
+    // Dispatch to UploadDropzone which listens for this event and uses UploadManager
+    const evt = new CustomEvent<FileList>("fileUpload", { detail: files });
+    document.dispatchEvent(evt);
+  }, []);
 
   // Enhanced upload complete handler
   const handleUploadComplete = useCallback(() => {
@@ -478,7 +474,7 @@ export default function FileManager() {
       title?: string;
       description?: string;
       theme?: string;
-      viewMode?: 'list' | 'grid';
+      viewMode?: "list" | "grid";
     }) => {
       try {
         const response = await fetch("/api/fs/share/create", {
@@ -554,10 +550,13 @@ export default function FileManager() {
 
           case "download":
             // Use the new download API for both files and folders
-            const downloadUrl = `/api/fs/download?path=${encodeURIComponent(itemPath)}`;
+            const downloadUrl = `/api/fs/download?path=${encodeURIComponent(
+              itemPath
+            )}`;
             const link = document.createElement("a");
             link.href = downloadUrl;
-            link.download = item.type === "dir" ? `${item.name}.zip` : item.name;
+            link.download =
+              item.type === "dir" ? `${item.name}.zip` : item.name;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -713,15 +712,11 @@ export default function FileManager() {
 
         {error && <ErrorMessage error={error} onClose={() => setError(null)} />}
 
-        <UploadDropzone 
-          onUpload={handleUpload}
+        <UploadDropzone
           onUploadComplete={handleUploadComplete}
           targetPath={currentPath}
         >
-          <GlobalDropzone 
-            onFilesDropped={handleUpload}
-            enabled={!loading}
-          />
+          <GlobalDropzone onFilesDropped={handleUpload} enabled={!loading} />
           <FileList
             items={filteredItems}
             selectedItems={selectedItems}

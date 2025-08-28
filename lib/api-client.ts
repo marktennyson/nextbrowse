@@ -29,6 +29,26 @@ export const apiClient = {
     return response.json()
   },
 
+  // File write
+  async writeFile(path: string, content: string) {
+    const response = await fetch(`${API_BASE_URL}/api/fs/write`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path, content }),
+    })
+    return response.json()
+  },
+
+  // File create
+  async createFile(path: string, content: string = '') {
+    const response = await fetch(`${API_BASE_URL}/api/fs/create`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path, content }),
+    })
+    return response.json()
+  },
+
   // File upload
   async uploadFiles(path: string, files: FileList) {
     const formData = new FormData()

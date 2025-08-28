@@ -1,7 +1,6 @@
 "use client";
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
-  CloudArrowUpIcon,
   PlayIcon,
   PauseIcon,
   XMarkIcon,
@@ -9,37 +8,41 @@ import {
   ArrowDownTrayIcon,
 } from "@heroicons/react/24/outline";
 import { UploadManager, UploadProgress } from "@/lib/upload-manager";
+import FileConflictDialog from "@/components/FileConflictDialog";
 
 interface UploadDropzoneProps {
-  onUpload: (files: FileList) => void;
   onUploadComplete?: () => void;
   targetPath: string;
   children: React.ReactNode;
 }
 
 export default function UploadDropzone({
-  onUpload,
   onUploadComplete,
   targetPath,
   children,
 }: UploadDropzoneProps) {
-  const [isDragging, setIsDragging] = useState(false);
   const [uploads, setUploads] = useState<UploadProgress[]>([]);
   const [isUploading, setIsUploading] = useState(false);
-  const dragCounterRef = useRef(0);
+  const [conflictDialog, setConflictDialog] = useState<{
+    fileName: string;
+    onReplace: () => void;
+    onCancel: () => void;
+  } | null>(null);
   const uploadManagerRef = useRef<UploadManager | null>(null);
 
   // Initialize upload manager
   useEffect(() => {
     uploadManagerRef.current = new UploadManager();
-    
+
     uploadManagerRef.current.onGlobalProgress((allProgress) => {
       setUploads(allProgress);
-      const hasActive = allProgress.some(p => p.status === 'uploading' || p.status === 'pending');
+      const hasActive = allProgress.some(
+        (p) => p.status === "uploading" || p.status === "pending"
+      );
       setIsUploading(hasActive);
-      
+
       if (!hasActive && allProgress.length > 0) {
-        const allCompleted = allProgress.every(p => p.status === 'completed');
+        const allCompleted = allProgress.every((p) => p.status === "completed");
         if (allCompleted && onUploadComplete) {
           setTimeout(() => {
             onUploadComplete();
@@ -48,18 +51,24 @@ export default function UploadDropzone({
         }
       }
     });
-    
+
+    uploadManagerRef.current.onConflict((fileName, onReplace, onCancel) => {
+      setConflictDialog({ fileName, onReplace, onCancel });
+    });
+
     return () => {
       uploadManagerRef.current = null;
     };
   }, [onUploadComplete]);
 
-  const handleFileUpload = useCallback(async (files: FileList) => {
-    if (uploadManagerRef.current) {
-      await uploadManagerRef.current.addFiles(files, targetPath);
-    }
-    onUpload(files);
-  }, [targetPath, onUpload]);
+  const handleFileUpload = useCallback(
+    async (files: FileList) => {
+      if (uploadManagerRef.current) {
+        await uploadManagerRef.current.addFiles(files, targetPath);
+      }
+    },
+    [targetPath]
+  );
 
   useEffect(() => {
     const handleFileUploadEvent = (e: CustomEvent<FileList>) => {
@@ -68,7 +77,10 @@ export default function UploadDropzone({
       }
     };
 
-    document.addEventListener("fileUpload", handleFileUploadEvent as EventListener);
+    document.addEventListener(
+      "fileUpload",
+      handleFileUploadEvent as EventListener
+    );
     return () => {
       document.removeEventListener(
         "fileUpload",
@@ -77,40 +89,8 @@ export default function UploadDropzone({
     };
   }, [handleFileUpload]);
 
-  const handleDragEnter = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    dragCounterRef.current++;
-    if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
-      setIsDragging(true);
-    }
-  };
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    dragCounterRef.current--;
-    if (dragCounterRef.current === 0) {
-      setIsDragging(false);
-    }
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-    dragCounterRef.current = 0;
-
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      void handleFileUpload(e.dataTransfer.files);
-    }
-  };
-
+  // Drag handling is now delegated entirely to GlobalDropzone
+  // which communicates with this component via the fileUpload custom event
 
   const pauseUpload = (fileId: string) => {
     uploadManagerRef.current?.pauseUpload(fileId);
@@ -125,82 +105,67 @@ export default function UploadDropzone({
   };
 
   const formatBytes = (bytes: number): string => {
-    return uploadManagerRef.current?.formatBytes(bytes) || '0 B';
+    return uploadManagerRef.current?.formatBytes(bytes) || "0 B";
   };
 
   const formatTime = (seconds: number): string => {
-    return uploadManagerRef.current?.formatTime(seconds) || '--:--';
+    return uploadManagerRef.current?.formatTime(seconds) || "--:--";
   };
 
-  const getStatusIcon = (status: UploadProgress['status']) => {
+  const getStatusIcon = (status: UploadProgress["status"]) => {
     switch (status) {
-      case 'completed':
+      case "completed":
         return <ArrowDownTrayIcon className="h-4 w-4 text-green-500" />;
-      case 'error':
+      case "error":
         return <XMarkIcon className="h-4 w-4 text-red-500" />;
-      case 'paused':
+      case "paused":
         return <PauseIcon className="h-4 w-4 text-yellow-500" />;
-      case 'uploading':
-        return <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-500 border-t-transparent" />;
+      case "uploading":
+        return (
+          <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-500 border-t-transparent" />
+        );
       default:
         return <ClockIcon className="h-4 w-4 text-gray-400" />;
     }
   };
 
-  const getStatusColor = (status: UploadProgress['status']) => {
-    switch (status) {
-      case 'completed': return 'bg-green-500';
-      case 'error': return 'bg-red-500';
-      case 'paused': return 'bg-yellow-500';
-      case 'uploading': return 'bg-blue-500';
-      default: return 'bg-gray-300';
-    }
-  };
+  // no-op: using native progress element now
 
   return (
-    <div
-      onDragEnter={handleDragEnter}
-      onDragLeave={handleDragLeave}
-      onDragOver={handleDragOver}
-      onDrop={handleDrop}
-      className={`relative transition-all duration-300 ${
-        isDragging ? "drag-over" : ""
-      }`}
-    >
+    <div className="relative">
       {children}
-
-      {isDragging && (
-        <div className="absolute inset-0 glass bg-white/80 dark:bg-white/5 border-2 border-dashed border-blue-300 dark:border-white/20 rounded-xl flex items-center justify-center z-50">
-          <div className="text-center">
-            <div className="relative mb-6">
-              <CloudArrowUpIcon className="h-20 w-20 text-blue-500 dark:text-slate-200 mx-auto" />
-            </div>
-            <p className="text-xl font-medium text-slate-800 dark:text-slate-100 mb-3">
-              Drop files to upload
-            </p>
-            <p className="text-sm text-slate-600 dark:text-gray-300">
-              Release to start transfer
-            </p>
-          </div>
-        </div>
-      )}
 
       {uploads.length > 0 && (
         <div className="absolute inset-0 glass bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm z-40 rounded-xl p-6 overflow-y-auto">
           <div className="max-h-full">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                File Uploads ({uploads.filter(u => u.status === 'completed').length}/{uploads.length})
+                File Uploads (
+                {uploads.filter((u) => u.status === "completed").length}/
+                {uploads.length})
               </h3>
               <button
-                onClick={() => setUploads([])}
+                onClick={() => {
+                  // Cancel all uploads via UploadManager, then clear UI
+                  const mgr = uploadManagerRef.current;
+                  if (mgr) {
+                    for (const u of uploads) {
+                      try {
+                        mgr.cancelUpload(u.fileId);
+                      } catch {
+                        // ignore
+                      }
+                    }
+                  }
+                  setUploads([]);
+                }}
                 className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                disabled={isUploading}
+                aria-label="Close uploads"
               >
                 <XMarkIcon className="h-5 w-5" />
               </button>
             </div>
-            
+
             <div className="space-y-3 max-h-96 overflow-y-auto">
               {uploads.map((upload) => (
                 <div
@@ -218,76 +183,120 @@ export default function UploadDropzone({
                     </div>
                     <div className="flex items-center space-x-2 ml-2">
                       {getStatusIcon(upload.status)}
-                      {upload.status === 'uploading' && (
+                      {upload.status === "uploading" && (
                         <button
                           onClick={() => pauseUpload(upload.fileId)}
                           className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                          aria-label={`Pause upload ${upload.fileName}`}
                         >
                           <PauseIcon className="h-4 w-4" />
                         </button>
                       )}
-                      {upload.status === 'paused' && (
+                      {upload.status === "paused" && (
                         <button
                           onClick={() => resumeUpload(upload.fileId)}
                           className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                          aria-label={`Resume upload ${upload.fileName}`}
                         >
                           <PlayIcon className="h-4 w-4" />
                         </button>
                       )}
-                      {(upload.status === 'pending' || upload.status === 'uploading' || upload.status === 'paused') && (
+                      {(upload.status === "pending" ||
+                        upload.status === "uploading" ||
+                        upload.status === "paused") && (
                         <button
                           onClick={() => cancelUpload(upload.fileId)}
                           className="text-red-400 hover:text-red-600"
+                          aria-label={`Cancel upload ${upload.fileName}`}
                         >
                           <XMarkIcon className="h-4 w-4" />
                         </button>
                       )}
                     </div>
                   </div>
-                  
-                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mb-2">
-                    <div
-                      className={`h-2 rounded-full transition-all duration-300 ${getStatusColor(upload.status)}`}
-                      style={{ width: `${upload.progress}%` }}
-                    />
-                  </div>
-                  
+
+                  <progress
+                    className="w-full h-2 mb-2 block"
+                    value={Math.max(
+                      0,
+                      Math.min(100, Math.round(upload.progress))
+                    )}
+                    max={100}
+                  />
+
                   <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
                     <span>{upload.progress.toFixed(1)}%</span>
-                    {upload.status === 'uploading' && (
+                    {upload.status === "uploading" && (
                       <div className="flex items-center space-x-4">
                         <span>{formatBytes(upload.speed)}/s</span>
-                        <span>{formatTime(upload.timeRemaining)} remaining</span>
+                        <span>
+                          {formatTime(upload.timeRemaining)} remaining
+                        </span>
                       </div>
                     )}
-                    {upload.status === 'completed' && (
-                      <span className="text-green-600 dark:text-green-400 font-medium">Complete</span>
-                    )}
-                    {upload.status === 'error' && (
-                      <span className="text-red-600 dark:text-red-400 font-medium">
-                        {upload.error || 'Upload failed'}
+                    {upload.status === "completed" && (
+                      <span className="text-green-600 dark:text-green-400 font-medium">
+                        Complete
                       </span>
                     )}
-                    {upload.status === 'paused' && (
-                      <span className="text-yellow-600 dark:text-yellow-400 font-medium">Paused</span>
+                    {upload.status === "error" && (
+                      <div className="flex items-center space-x-2">
+                        <span className="text-red-600 dark:text-red-400 font-medium">
+                          {upload.error || "Upload failed"}
+                        </span>
+                        {upload.error === "file exists" && (
+                          <div className="flex items-center space-x-2 ml-2">
+                            <button
+                              onClick={() =>
+                                uploadManagerRef.current?.retryWithReplace(
+                                  upload.fileId
+                                )
+                              }
+                              className="px-2 py-1 bg-blue-600 text-white rounded text-xs"
+                            >
+                              Replace
+                            </button>
+                            <button
+                              onClick={() => cancelUpload(upload.fileId)}
+                              className="px-2 py-1 bg-gray-200 text-gray-800 rounded text-xs"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {upload.status === "paused" && (
+                      <span className="text-yellow-600 dark:text-yellow-400 font-medium">
+                        Paused
+                      </span>
                     )}
                   </div>
                 </div>
               ))}
             </div>
-            
+
             {uploads.length > 0 && (
               <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-gray-600 dark:text-gray-400">
-                    Total: {formatBytes(uploads.reduce((acc, u) => acc + u.fileSize, 0))}
+                    Total:{" "}
+                    {formatBytes(
+                      uploads.reduce((acc, u) => acc + u.fileSize, 0)
+                    )}
                   </span>
                   <span className="text-gray-600 dark:text-gray-400">
-                    Uploaded: {formatBytes(uploads.reduce((acc, u) => acc + u.uploadedBytes, 0))}
+                    Uploaded:{" "}
+                    {formatBytes(
+                      uploads.reduce((acc, u) => acc + u.uploadedBytes, 0)
+                    )}
                   </span>
                   {isUploading && (
                     <span className="text-blue-600 dark:text-blue-400 font-medium">
-                      {formatBytes(uploads.reduce((acc, u) => acc + (u.speed || 0), 0))}/s
+                      {formatBytes(
+                        uploads.reduce((acc, u) => acc + (u.speed || 0), 0)
+                      )}
+                      /s
                     </span>
                   )}
                 </div>
@@ -296,6 +305,19 @@ export default function UploadDropzone({
           </div>
         </div>
       )}
+
+      <FileConflictDialog
+        open={conflictDialog !== null}
+        fileName={conflictDialog?.fileName || ""}
+        onClose={() => {
+          conflictDialog?.onCancel();
+          setConflictDialog(null);
+        }}
+        onReplace={() => {
+          conflictDialog?.onReplace();
+          setConflictDialog(null);
+        }}
+      />
     </div>
   );
 }
