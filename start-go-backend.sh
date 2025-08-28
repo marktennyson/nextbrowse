@@ -40,7 +40,7 @@ echo -e "   PORT: $PORT"
 echo -e "   BASE_URL: $NEXT_PUBLIC_BASE_URL"
 
 # Navigate to Go backend directory
-cd go-backend
+cd backend
 
 # Download dependencies
 echo -e "${YELLOW}📦 Downloading Go dependencies...${NC}"
