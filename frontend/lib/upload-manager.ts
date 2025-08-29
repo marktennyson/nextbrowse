@@ -38,7 +38,7 @@ export class UploadManager {
     onReplace: () => void,
     onCancel: () => void
   ) => void;
-  private concurrentUploads = 3;
+  private concurrentUploads = 4;
   private activeUploads = new Set<string>();
   private queue: string[] = [];
   private chunkSize = 16 * 1024 * 1024; // default 16MB chunks for better throughput
@@ -84,13 +84,15 @@ export class UploadManager {
       }
 
       // Check for existing upload to resume
-      let resumeData = { canResume: false, uploadedChunks: [] };
+  let resumeData = { canResume: false, uploadedChunks: [] as number[] };
       let hasConflict = false;
       try {
         resumeData = await this.checkResumeData(
           fileId,
           file.name,
-          perFileTargetPath
+          perFileTargetPath,
+          chunkSize,
+          totalChunks
         );
       } catch (error) {
         if (error instanceof Error && error.message === "file exists") {
@@ -185,13 +187,16 @@ export class UploadManager {
   private async checkResumeData(
     fileId: string,
     fileName: string,
-    pathParam: string
+    pathParam: string,
+    chunkSize: number,
+    totalChunks: number
   ) {
     try {
       const response = await fetch(`${API_BASE_URL}/api/fs/upload-status`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fileId, fileName, pathParam }),
+  // Provide chunk hints so backend can compute resume from .part size
+  body: JSON.stringify({ fileId, fileName, pathParam, chunkSize, totalChunks }),
       });
 
       if (response.ok) {
@@ -370,7 +375,7 @@ export class UploadManager {
     if (!uploadFile || !progress) return;
 
     try {
-      while (uploadFile.currentChunk < uploadFile.totalChunks) {
+  while (uploadFile.currentChunk < uploadFile.totalChunks) {
         // Check if upload was paused or cancelled
         if (progress.status === "paused" || !this.uploads.has(fileId)) {
           break;
@@ -428,7 +433,9 @@ export class UploadManager {
     formData.append("fileName", file.name);
     formData.append("fileId", fileId);
     formData.append("chunkIndex", currentChunk.toString());
-    formData.append("totalChunks", uploadFile.totalChunks.toString());
+  formData.append("totalChunks", uploadFile.totalChunks.toString());
+  formData.append("chunkSize", uploadFile.chunkSize.toString());
+  formData.append("totalSize", uploadFile.file.size.toString());
     formData.append("chunk", chunk);
     // If client requested replace for this file, include that flag so backend will overwrite
     if (this.replaceFlags.get(fileId)) {
