@@ -147,6 +147,28 @@ export function useFileOperations({
     [currentPath, refreshDirectory, setError]
   );
 
+  const createFile = useCallback(
+    async (fileName: string) => {
+      try {
+        const filePath = `${currentPath}/${fileName}`.replace(/\/+/g, "/");
+        const response = await fetch("/api/fs/create", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ path: filePath, content: "" }),
+        });
+
+        if (!response.ok) {
+          await handleErrorResponse(response);
+        }
+
+        refreshDirectory();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Create file failed");
+      }
+    },
+    [currentPath, refreshDirectory, setError]
+  );
+
   const handleRename = useCallback(
     async (item: FileItem, newName: string) => {
       const itemPath = `${currentPath}/${item.name}`.replace(/\/+/g, "/");
@@ -217,6 +239,7 @@ export function useFileOperations({
     downloadSelected,
     handleMoveCopy,
     createFolder,
+    createFile,
     handleRename,
     deleteItem,
     downloadItem,

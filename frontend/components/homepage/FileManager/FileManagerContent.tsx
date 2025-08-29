@@ -46,6 +46,7 @@ interface FileManagerContentProps {
   onDeleteSelected: () => void;
   onDownloadSelected: () => void;
   onCreateFolder: (name: string) => void;
+  onCreateFile: (name: string) => void;
   onMoveCopy: (targetPath: string, mode: "move" | "copy", items: string[]) => void;
   onRename: (item: FileItem, newName: string) => void;
   onDeleteItem: (item: FileItem) => void;
@@ -88,6 +89,7 @@ export default function FileManagerContent({
   onDeleteSelected,
   onDownloadSelected,
   onCreateFolder,
+  onCreateFile,
   onMoveCopy,
   onRename,
   onDeleteItem,
@@ -352,6 +354,7 @@ export default function FileManagerContent({
             }
           }}
           onCreateFolder={onCreateFolder}
+          onCreateFile={onCreateFile}
           onUpload={handleUpload}
           onRefresh={onRefresh}
           onNavigateUp={onNavigateUp}

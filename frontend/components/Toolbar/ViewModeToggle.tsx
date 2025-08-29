@@ -24,7 +24,7 @@ export default function ViewModeToggle({
       >
         <Squares2X2Icon
           className={`h-3 w-3 sm:h-4 sm:w-4 transition-transform duration-200 ${
-            viewMode === "grid" ? "scale-110" : "group-hover:scale-105"
+            viewMode === "grid" ? "text-blue-400 scale-110" : "text-gray-400 group-hover:text-blue-300 group-hover:scale-105"
           }`}
         />
       </button>
@@ -39,7 +39,7 @@ export default function ViewModeToggle({
       >
         <ListBulletIcon
           className={`h-3 w-3 sm:h-4 sm:w-4 transition-transform duration-200 ${
-            viewMode === "list" ? "scale-110" : "group-hover:scale-105"
+            viewMode === "list" ? "text-blue-400 scale-110" : "text-gray-400 group-hover:text-blue-300 group-hover:scale-105"
           }`}
         />
       </button>

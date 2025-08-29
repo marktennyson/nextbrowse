@@ -22,11 +22,11 @@ export default function HiddenFilesToggle({
       title={showHidden ? "Hide hidden files" : "Show hidden files"}
     >
       {showHidden ? (
-        <EyeSlashIcon className="h-3 w-3 sm:h-4 sm:w-4 transition-transform duration-200 group-hover:scale-110" />
+        <EyeSlashIcon className="h-3 w-3 sm:h-4 sm:w-4 transition-all duration-300 group-hover:text-amber-300 group-hover:scale-110 group-hover:rotate-12" />
       ) : (
-        <EyeIcon className="h-3 w-3 sm:h-4 sm:w-4 transition-transform duration-200 group-hover:scale-110" />
+        <EyeIcon className="h-3 w-3 text-gray-500 sm:h-4 sm:w-4 transition-all duration-300 group-hover:text-amber-400 group-hover:scale-110 group-hover:-rotate-12" />
       )}
-      <span className="hidden md:inline ml-2">
+      <span className="hidden md:hidden ml-2">
         {showHidden ? "Hide" : "Show"} Hidden
       </span>
     </button>
