@@ -84,9 +84,9 @@ export default function SortControl({
         aria-expanded={showSortMenu}
         aria-controls="sort-menu-portal"
       >
-        <AdjustmentsHorizontalIcon className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-2 transition-transform duration-200 group-hover:scale-110" />
+        <AdjustmentsHorizontalIcon className="h-3 w-3 text-purple-500 sm:h-4 sm:w-4 sm:mr-2 transition-all duration-300 group-hover:text-purple-400 group-hover:scale-110 group-hover:rotate-45" />
         <span className="hidden sm:inline capitalize mr-1">{sortBy}</span>
-        <ChevronUpDownIcon className="h-3 w-3 sm:h-4 sm:w-4 ml-0.5 sm:ml-0 transition-transform duration-200 group-hover:rotate-180" />
+        <ChevronUpDownIcon className="h-3 w-3 text-purple-400 sm:h-4 sm:w-4 ml-0.5 sm:ml-0 transition-all duration-500 group-hover:text-purple-300 group-hover:rotate-180 group-hover:scale-110" />
       </button>
 
       {showSortMenu &&

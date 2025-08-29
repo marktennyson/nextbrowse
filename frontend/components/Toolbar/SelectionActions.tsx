@@ -35,7 +35,7 @@ export default function SelectionActions({
         className="group text-slate-300 hover:text-blue-400 transition-all duration-200 p-1 sm:p-2 rounded-md hover:bg-blue-900/20"
         title="Select all items"
       >
-        <CheckIcon className="h-3 w-3 sm:h-4 sm:w-4 transition-transform duration-200 group-hover:scale-110" />
+        <CheckIcon className="h-3 w-3 sm:h-4 sm:w-4 transition-all duration-300 group-hover:text-blue-300 group-hover:scale-125 group-hover:rotate-12" />
       </button>
     );
   }
@@ -51,7 +51,7 @@ export default function SelectionActions({
         className="group text-slate-300 hover:text-blue-400 transition-all duration-200 p-1 sm:p-2 rounded hover:bg-slate-700/50"
         title="Move selected items"
       >
-        <ArrowsRightLeftIcon className="h-3 w-3 sm:h-4 sm:w-4 transition-transform duration-200 group-hover:scale-110" />
+        <ArrowsRightLeftIcon className="h-3 w-3 sm:h-4 sm:w-4 transition-all duration-300 group-hover:scale-110 group-hover:rotate-180" />
       </button>
 
       <button
@@ -59,7 +59,7 @@ export default function SelectionActions({
         className="group text-slate-300 hover:text-emerald-400 transition-all duration-200 p-1 sm:p-2 rounded hover:bg-slate-700/50"
         title="Copy selected items"
       >
-        <DocumentDuplicateIcon className="h-3 w-3 sm:h-4 sm:w-4 transition-transform duration-200 group-hover:scale-110" />
+        <DocumentDuplicateIcon className="h-3 w-3 sm:h-4 sm:w-4 transition-all duration-300 group-hover:scale-110 group-hover:translate-x-1" />
       </button>
 
       <button
@@ -67,7 +67,7 @@ export default function SelectionActions({
         className="group text-slate-300 hover:text-purple-400 transition-all duration-200 p-1 sm:p-2 rounded hover:bg-slate-700/50"
         title="Download selected items"
       >
-        <ArrowDownTrayIcon className="h-3 w-3 sm:h-4 sm:w-4 transition-transform duration-200 group-hover:scale-110" />
+        <ArrowDownTrayIcon className="h-3 w-3 sm:h-4 sm:w-4 transition-all duration-300 group-hover:scale-110 group-hover:translate-y-1" />
       </button>
 
       <button
@@ -75,7 +75,7 @@ export default function SelectionActions({
         className="group text-slate-300 hover:text-red-400 transition-all duration-200 p-1 sm:p-2 rounded hover:bg-slate-700/50"
         title="Delete selected items"
       >
-        <TrashIcon className="h-3 w-3 sm:h-4 sm:w-4 transition-transform duration-200 group-hover:scale-110" />
+        <TrashIcon className="h-3 w-3 sm:h-4 sm:w-4 transition-all duration-300 group-hover:scale-110 group-hover:rotate-12" />
       </button>
 
       <div className="w-px h-3 sm:h-6 bg-blue-700 mx-0.5 sm:mx-1"></div>
@@ -85,7 +85,7 @@ export default function SelectionActions({
         className="group text-slate-400 hover:text-slate-200 transition-all duration-200 p-1 sm:p-2 rounded hover:bg-slate-700/50"
         title="Clear selection"
       >
-        <XMarkIcon className="h-3 w-3 sm:h-4 sm:w-4 transition-transform duration-200 group-hover:rotate-90" />
+        <XMarkIcon className="h-3 w-3 sm:h-4 sm:w-4 transition-all duration-300 group-hover:scale-110 group-hover:rotate-180" />
       </button>
     </div>
   );

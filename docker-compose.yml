@@ -2,7 +2,7 @@ services:
   # Go Backend Service
   go-backend:
     build:
-      context: ./go-backend
+      context: ./backend
       dockerfile: Dockerfile
     volumes:
       - ${ROOT_PATH:-./data}:/app/static:rw
@@ -23,7 +23,7 @@ services:
   # Next.js Frontend Service
   nextjs:
     build:
-      context: .
+      context: ./frontend
       dockerfile: Dockerfile
     environment:
       - NODE_ENV=production

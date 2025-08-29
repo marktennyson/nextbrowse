@@ -1,6 +1,6 @@
 "use client";
 import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
-import { AudioTrack } from "./MusicPlayer";
+import { AudioTrack } from "./MusicPlayer/types";
 import { FileItem, filterAudioFiles, shuffleArray } from "@/lib/audio-utils";
 
 interface MusicPlayerContextType {

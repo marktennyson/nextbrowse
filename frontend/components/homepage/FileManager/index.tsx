@@ -108,6 +108,7 @@ export default function FileManager() {
       onDeleteSelected={fileOperations.deleteSelected}
       onDownloadSelected={fileOperations.downloadSelected}
       onCreateFolder={fileOperations.createFolder}
+      onCreateFile={fileOperations.createFile}
       onMoveCopy={fileOperations.handleMoveCopy}
       onRename={fileOperations.handleRename}
       onDeleteItem={fileOperations.deleteItem}

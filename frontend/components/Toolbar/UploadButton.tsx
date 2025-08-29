@@ -121,19 +121,19 @@ export default function UploadButton({ onFilesSelected }: UploadButtonProps) {
         <div className="inline-flex rounded-md sm:rounded-lg shadow-sm">
           <button
             onClick={handleFileClick}
-            className="inline-flex items-center px-2 sm:px-4 py-1.5 sm:py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-medium transition-colors duration-200 rounded-l-md sm:rounded-l-lg"
+            className="group inline-flex items-center px-2 sm:px-4 py-1.5 sm:py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-medium transition-colors duration-200 rounded-l-md sm:rounded-l-lg"
             aria-label="Upload files"
           >
-            <CloudArrowUpIcon className="h-4 w-4 mr-1.5" />
+            <CloudArrowUpIcon className="h-4 w-4 text-cyan-400 mr-1.5 transition-all duration-300 group-hover:text-cyan-300 group-hover:scale-110 group-hover:-translate-y-1" />
             Upload
           </button>
           <button
             onClick={() => setOpen((v) => !v)}
             aria-haspopup="menu"
-            className="px-2 sm:px-3 py-1.5 sm:py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm border-l border-white/20 rounded-r-md sm:rounded-r-lg"
+            className="group px-2 sm:px-3 py-1.5 sm:py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm border-l border-white/20 rounded-r-md sm:rounded-r-lg"
             title="More upload options"
           >
-            <ChevronDownIcon className="h-4 w-4" />
+            <ChevronDownIcon className="h-4 w-4 text-cyan-300 transition-all duration-300 group-hover:text-cyan-200 group-hover:rotate-180 group-hover:scale-110" />
           </button>
         </div>
       </div>
