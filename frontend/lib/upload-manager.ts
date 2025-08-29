@@ -84,7 +84,7 @@ export class UploadManager {
       }
 
       // Check for existing upload to resume
-  let resumeData = { canResume: false, uploadedChunks: [] as number[] };
+      let resumeData = { canResume: false, uploadedChunks: [] as number[] };
       let hasConflict = false;
       try {
         resumeData = await this.checkResumeData(
@@ -195,8 +195,14 @@ export class UploadManager {
       const response = await fetch(`${API_BASE_URL}/api/fs/upload-status`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-  // Provide chunk hints so backend can compute resume from .part size
-  body: JSON.stringify({ fileId, fileName, pathParam, chunkSize, totalChunks }),
+        // Provide chunk hints so backend can compute resume from .part size
+        body: JSON.stringify({
+          fileId,
+          fileName,
+          pathParam,
+          chunkSize,
+          totalChunks,
+        }),
       });
 
       if (response.ok) {
@@ -375,7 +381,7 @@ export class UploadManager {
     if (!uploadFile || !progress) return;
 
     try {
-  while (uploadFile.currentChunk < uploadFile.totalChunks) {
+      while (uploadFile.currentChunk < uploadFile.totalChunks) {
         // Check if upload was paused or cancelled
         if (progress.status === "paused" || !this.uploads.has(fileId)) {
           break;
@@ -433,9 +439,9 @@ export class UploadManager {
     formData.append("fileName", file.name);
     formData.append("fileId", fileId);
     formData.append("chunkIndex", currentChunk.toString());
-  formData.append("totalChunks", uploadFile.totalChunks.toString());
-  formData.append("chunkSize", uploadFile.chunkSize.toString());
-  formData.append("totalSize", uploadFile.file.size.toString());
+    formData.append("totalChunks", uploadFile.totalChunks.toString());
+    formData.append("chunkSize", uploadFile.chunkSize.toString());
+    formData.append("totalSize", uploadFile.file.size.toString());
     formData.append("chunk", chunk);
     // If client requested replace for this file, include that flag so backend will overwrite
     if (this.replaceFlags.get(fileId)) {
