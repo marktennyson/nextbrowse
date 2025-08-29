@@ -1,0 +1,436 @@
+@import "tailwindcss";
+
+:root {
+  --background: #0a0a0a; /* neutral-950 */
+  --foreground: #fafaf9; /* stone-50 */
+  --primary: #60a5fa; /* blue-400 */
+  --secondary: #fb923c; /* orange-400 */
+  --accent: #f472b6; /* pink-400 */
+  --success: #4ade80; /* green-400 */
+  --warning: #fbbf24; /* amber-400 */
+  --error: #f87171; /* red-400 */
+  --surface: #171717; /* neutral-900 */
+  --surface-elevated: #262626; /* neutral-800 */
+  --surface-hover: #404040; /* neutral-700 */
+  --border: rgba(245, 245, 244, 0.1);
+  --border-light: rgba(245, 245, 244, 0.06);
+  --text-primary: #fafaf9; /* stone-50 */
+  --text-secondary: #d6d3d1; /* stone-300 */
+  --text-muted: #a8a29e; /* stone-400 */
+  --glass-bg: rgba(10, 10, 10, 0.8);
+  --glass-border: rgba(245, 245, 244, 0.08);
+  --hover-bg: rgba(245, 245, 244, 0.05);
+  --selected-bg: rgba(96, 165, 250, 0.12);
+  --selected-border: rgba(96, 165, 250, 0.3);
+}
+
+/* CSS Custom Properties */
+* {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* Subtle animations */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Music Player Styles */
+.slider {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+}
+
+.slider::-webkit-slider-track {
+  height: 4px;
+  border-radius: 2px;
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 16px;
+  width: 16px;
+  border-radius: 50%;
+  background: rgb(59 130 246);
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.slider::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
+  background: rgb(37 99 235);
+}
+
+.slider::-moz-range-track {
+  height: 4px;
+  border-radius: 2px;
+  background: rgb(255 255 255 / 0.1);
+}
+
+.slider::-moz-range-thumb {
+  height: 16px;
+  width: 16px;
+  border-radius: 50%;
+  background: rgb(59 130 246);
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  border: none;
+}
+
+/* Glass effect for music player */
+.glass {
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  background: rgba(10, 10, 10, 0.85);
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--surface);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--text-muted);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+
+.glass {
+  background: rgba(10, 10, 10, 0.8);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(245, 245, 244, 0.08);
+}
+
+/* Remove neon glow effects */
+.neon-text {
+  text-shadow: none;
+}
+
+.neon-border {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: none;
+}
+
+/* Interactive elements (gentle with smoother transitions) */
+.interactive {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+
+
+/* Grid pattern (very subtle, if used) */
+.grid-pattern {
+  background-image: linear-gradient(
+      rgba(125, 211, 252, 0.04) 1px,
+      transparent 1px
+    ),
+    linear-gradient(90deg, rgba(125, 211, 252, 0.04) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* Disable intense overlays */
+.matrix-bg::before {
+  content: none !important;
+}
+
+.hologram-scan::after {
+  content: none !important;
+}
+
+/* File type color coding */
+.file-icon-folder {
+  color: var(--primary);
+}
+
+.file-icon-image {
+  color: var(--success);
+}
+
+.file-icon-video {
+  color: var(--secondary);
+}
+
+.file-icon-audio {
+  color: var(--accent);
+}
+
+.file-icon-code {
+  color: var(--warning);
+}
+
+.file-icon-archive {
+  color: #ea580c; /* orange-600 for better contrast */
+}
+
+.file-icon-document {
+  color: #0891b2; /* cyan-600 for better contrast */
+}
+
+.file-icon-default {
+  color: var(--text-secondary);
+}
+
+
+
+/* File selection styles with enhanced feedback */
+.file-item-selected {
+  background: var(--selected-bg);
+  border: 2px solid var(--selected-border);
+  position: relative;
+  box-shadow: 0 0 0 1px var(--selected-border);
+  animation: selection-pulse 2s ease-in-out;
+}
+
+.file-item-selected::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--primary), var(--secondary));
+  border-radius: 4px 4px 0 0;
+}
+
+/* Enhanced hover effects for file items */
+.file-item-hover {
+  background: var(--hover-bg);
+  border-color: var(--border);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+}
+
+/* Enhanced interactive hover effects with smoother transitions */
+.interactive:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.interactive:active {
+  transform: translateY(0);
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Add subtle animations for file items */
+@keyframes file-item-appear {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.file-item-animate {
+  animation: file-item-appear 0.3s ease-out;
+}
+
+/* Double-click hint tooltip */
+.double-click-hint {
+  position: absolute;
+  bottom: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255, 255, 255, 0.9);
+  color: black;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  z-index: 50;
+}
+
+.group:hover .double-click-hint {
+  opacity: 1;
+}
+
+/* Pulse animation for selected items */
+@keyframes selection-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 1px var(--selected-border);
+  }
+  50% {
+    box-shadow: 0 0 0 3px var(--selected-border);
+  }
+}
+
+/* Context menu animation with smoother easing */
+@keyframes context-menu-appear {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.context-menu {
+  animation: context-menu-appear 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Modal/Dialog animations */
+@keyframes modal-appear {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.modal-animate {
+  animation: modal-appear 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Backdrop fade animation */
+@keyframes backdrop-appear {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.backdrop-animate {
+  animation: backdrop-appear 0.2s ease-out;
+}
+
+/* Upload animation delays */
+.animation-delay-100 {
+  animation-delay: 0.1s;
+}
+
+.animation-delay-200 {
+  animation-delay: 0.2s;
+}
+
+.animation-delay-300 {
+  animation-delay: 0.3s;
+}
+
+/* Form elements with smoother transitions */
+button,
+input,
+select,
+textarea {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+
+/* Remove default input styling for transparent inputs */
+input.bg-transparent {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+input.bg-transparent:focus {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Form styles */
+input,
+select,
+textarea {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-color: var(--primary);
+}
+
+button {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-primary);
+}
+
+button:hover {
+  background: var(--surface-hover);
+  border-color: var(--text-secondary);
+}
+
+/* Drag and drop styles */
+.drag-over {
+  background: var(--selected-bg);
+  border: 2px dashed var(--selected-border);
+}
+
+/* Loading animations */
+.animate-pulse > div {
+  background: linear-gradient(90deg, #374151, #4b5563, #374151);
+}
+
+/* Prevent text selection on file items */
+.file-item-no-select {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Prevent hover styles from overriding blue border */
+.file-item-blue-border:hover {
+  border-color: #60a5fa !important; /* blue-400 */
+}
+
+/* Allow text selection only for text content when editing */
+.file-item-no-select input,
+.file-item-no-select textarea {
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+}
