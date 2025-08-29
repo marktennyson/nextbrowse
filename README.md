@@ -2,6 +2,9 @@
 
 A modern, feature-rich file browser built with Next.js 15, designed to provide a web interface for browsing and managing files on your local machine through Docker and nginx.
 
+- End‑User Guide: see [docs/USER_GUIDE.md](docs/USER_GUIDE.md) for step‑by‑step deployment and usage.
+- Current limits: “Create file” and in‑browser save aren’t supported yet; folder download from share links isn’t implemented.
+
 ![NextBrowse](https://via.placeholder.com/800x400?text=NextBrowse+File+Manager)
 
 ## ✨ Features

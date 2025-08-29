@@ -14,7 +14,15 @@ services:
       - "8080"
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:8080/health",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -42,7 +50,7 @@ services:
       - "${PORT:-2929}:80"
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
-      - ${ROOT_PATH:-./data}:/app/static:ro
+      - ${ROOT_PATH:-./data}:/app/static:rw
     depends_on:
       - nextjs
       - go-backend
