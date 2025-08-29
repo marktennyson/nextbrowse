@@ -16,12 +16,18 @@ func main() {
 	r := gin.Default()
 
 	// CORS configuration
-	config := cors.DefaultConfig()
-	config.AllowOrigins = []string{"http://localhost:3000", "http://localhost:2929"}
-	config.AllowMethods = []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}
-	config.AllowHeaders = []string{"Origin", "Content-Type", "Accept", "Authorization"}
-	config.AllowCredentials = true
-	r.Use(cors.New(config))
+	cfg := cors.Config{
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
+		AllowCredentials: true,
+		// Dynamically allow any origin (nginx serves same-origin, but this also covers LAN IP access)
+		AllowOriginFunc: func(origin string) bool {
+			// Allow all origins; the library will echo the Origin value instead of '*'
+			// which is compatible with credentials=true
+			return true
+		},
+	}
+	r.Use(cors.New(cfg))
 
 	// Security middleware
 	r.Use(middleware.SecurityHeaders())
