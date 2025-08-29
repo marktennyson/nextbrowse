@@ -8,12 +8,10 @@ import {
   ArrowLeftIcon,
   MagnifyingGlassIcon,
   FolderIcon,
-  CommandLineIcon,
   BugAntIcon,
   PlayIcon,
   PuzzlePieceIcon,
   ChevronRightIcon,
-  ChevronDownIcon,
 } from "@heroicons/react/24/outline";
 
 import Monaco from "./Monaco";
@@ -183,21 +181,63 @@ export default function IDE({
       if (!file) return;
 
       try {
-        const res = await fetch("/api/fs/write", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ path, content: file.content }),
+        // Save via single-chunk upload with replace=true
+        const formData = new FormData();
+        formData.append(
+          "path",
+          path.substring(0, path.lastIndexOf("/")) || "/"
+        );
+        formData.append("fileName", path.split("/").pop() || "file.txt");
+        formData.append(
+          "fileId",
+          `ide_${Date.now()}_${Math.random().toString(36).slice(2)}`
+        );
+        formData.append("chunkIndex", "0");
+        formData.append("totalChunks", "1");
+        formData.append("replace", "true");
+        const blob = new Blob([file.content], {
+          type: "text/plain;charset=utf-8",
         });
-        const data = await res.json();
-        if (!data.ok) throw new Error(data.error || "Failed to save file");
+        formData.append(
+          "chunk",
+          blob,
+          file.path.split("/").pop() || "file.txt"
+        );
+
+        const res = await fetch("/api/fs/upload-chunk", {
+          method: "POST",
+          body: formData,
+        });
+        const text = await res.text();
+        if (!res.ok) {
+          let msg = `HTTP ${res.status}`;
+          try {
+            const data = JSON.parse(text);
+            msg = data.error || data.message || msg;
+          } catch {}
+          throw new Error(msg);
+        }
+        let ok = true;
+        try {
+          const data = JSON.parse(text);
+          ok = !!data.ok;
+        } catch {}
+        if (!ok) throw new Error("Save failed");
+
+        // Refresh metadata (size/mtime) by reading file
+        const info = (await apiClient.readFile(path)) as {
+          ok?: boolean;
+          size?: number;
+          mtime?: number;
+        };
 
         setOpenFiles((prev) => ({
           ...prev,
           [path]: {
             ...file,
             originalContent: file.content,
-            size: data.size,
-            mtime: data.mtime,
+            size: typeof info?.size === "number" ? info.size : file.size,
+            mtime: typeof info?.mtime === "number" ? info.mtime : Date.now(),
           },
         }));
         if (activeFile === path) {

@@ -43,7 +43,11 @@ interface FileTreeItemProps {
   onFileSelect: (path: string) => void;
   onToggleExpand: (path: string) => void;
   selectedFile?: string;
-  onContextMenu?: (e: React.MouseEvent, path: string, isDirectory: boolean) => void;
+  onContextMenu?: (
+    e: React.MouseEvent,
+    path: string,
+    isDirectory: boolean
+  ) => void;
 }
 
 function FileTreeItem({
@@ -56,7 +60,7 @@ function FileTreeItem({
 }: FileTreeItemProps) {
   const isSelected = selectedFile === node.path;
   const canOpen = node.type === "file" && isTextFile(node.name);
-  
+
   const handleClick = () => {
     if (node.type === "dir") {
       onToggleExpand(node.path);
@@ -95,18 +99,16 @@ function FileTreeItem({
             )}
           </div>
         )}
-        
+
         {node.type === "dir" ? (
           <FolderIconComponent className="w-4 h-4 mr-2 text-blue-500 flex-shrink-0" />
         ) : (
           <Icon className="w-4 h-4 mr-2 flex-shrink-0" />
         )}
-        
-        <span className="text-sm truncate">
-          {node.name}
-        </span>
+
+        <span className="text-sm truncate">{node.name}</span>
       </div>
-      
+
       {node.type === "dir" && node.isExpanded && node.children && (
         <div>
           {node.children.map((child) => (
@@ -153,9 +155,11 @@ export default function FileTree({
 
   const loadDirectory = async (path: string): Promise<FileTreeNode[]> => {
     try {
-      const response = await fetch(`/api/fs/list?path=${encodeURIComponent(path)}`);
+      const response = await fetch(
+        `/api/fs/list?path=${encodeURIComponent(path)}`
+      );
       const data = await response.json();
-      
+
       if (!data.ok) {
         throw new Error(data.error || "Failed to load directory");
       }
@@ -244,7 +248,11 @@ export default function FileTree({
     initializeTree();
   }, [rootPath]);
 
-  const onContextMenu = (e: React.MouseEvent, path: string, isDirectory: boolean) => {
+  const onContextMenu = (
+    e: React.MouseEvent,
+    path: string,
+    isDirectory: boolean
+  ) => {
     setContextMenu({
       x: e.clientX,
       y: e.clientY,
@@ -255,38 +263,59 @@ export default function FileTree({
 
   const handleCreateFile = async (name: string, isFolder: boolean) => {
     try {
-      const fullPath = newFileDialog.parentPath === "/" 
-        ? `/${name}` 
-        : `${newFileDialog.parentPath}/${name}`;
+      const parentPath = newFileDialog.parentPath;
 
       if (isFolder) {
         const response = await fetch("/api/fs/mkdir", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ path: fullPath }),
+          body: JSON.stringify({ path: parentPath, name }),
         });
-        
+
         if (!response.ok) {
           const data = await response.json();
           throw new Error(data.error || "Failed to create folder");
         }
       } else {
-        const response = await fetch("/api/fs/create", {
+        // Create empty file via single-chunk upload
+        const formData = new FormData();
+        formData.append("path", parentPath);
+        formData.append("fileName", name);
+        formData.append(
+          "fileId",
+          `ide_create_${Date.now()}_${Math.random().toString(36).slice(2)}`
+        );
+        formData.append("chunkIndex", "0");
+        formData.append("totalChunks", "1");
+        const emptyBlob = new Blob([], { type: "application/octet-stream" });
+        formData.append("chunk", emptyBlob, name);
+
+        const response = await fetch("/api/fs/upload-chunk", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ path: fullPath, content: "" }),
+          body: formData,
         });
-        
+
         if (!response.ok) {
-          const data = await response.json();
-          throw new Error(data.error || "Failed to create file");
+          let msg = "Failed to create file";
+          try {
+            const data = await response.json();
+            if (
+              data &&
+              typeof data === "object" &&
+              Object.prototype.hasOwnProperty.call(data as object, "error")
+            ) {
+              msg = (data as { error?: string }).error || msg;
+            }
+          } catch {}
+          throw new Error(msg);
         }
-        
-        onFileCreate?.(fullPath);
+
+        onFileCreate?.(
+          parentPath === "/" ? `/${name}` : `${parentPath}/${name}`
+        );
       }
 
       // Refresh the parent directory
-      const parentPath = newFileDialog.parentPath;
       const children = await loadDirectory(parentPath);
       setTree((prevTree) =>
         updateNodeInTree(prevTree, parentPath, (node) => ({
@@ -299,20 +328,26 @@ export default function FileTree({
       toast.success(`${isFolder ? "Folder" : "File"} created successfully`);
     } catch (error) {
       console.error("Error creating file/folder:", error);
-      toast.error(`Failed to create ${isFolder ? "folder" : "file"}: ${error instanceof Error ? error.message : "Unknown error"}`);
+      toast.error(
+        `Failed to create ${isFolder ? "folder" : "file"}: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
     }
   };
 
   const handleDelete = async (path: string) => {
-    if (!confirm(`Are you sure you want to delete "${path.split("/").pop()}"?`)) {
+    if (
+      !confirm(`Are you sure you want to delete "${path.split("/").pop()}"?`)
+    ) {
       return;
     }
 
     try {
       const response = await fetch("/api/fs/delete", {
-        method: "DELETE",
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ paths: [path] }),
+        body: JSON.stringify({ path }),
       });
 
       if (!response.ok) {
@@ -325,7 +360,7 @@ export default function FileTree({
       // Refresh the tree
       const parentPath = path.substring(0, path.lastIndexOf("/")) || "/";
       const children = await loadDirectory(parentPath);
-      
+
       if (parentPath === rootPath) {
         setTree(children);
       } else {
@@ -340,7 +375,11 @@ export default function FileTree({
       toast.success("Deleted successfully");
     } catch (error) {
       console.error("Error deleting:", error);
-      toast.error(`Failed to delete: ${error instanceof Error ? error.message : "Unknown error"}`);
+      toast.error(
+        `Failed to delete: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
     }
   };
 
