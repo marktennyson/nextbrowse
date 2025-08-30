@@ -1,51 +1,59 @@
+# -------------------
 # Build stage
+# -------------------
 FROM golang:1.22-alpine AS builder
 
 # Set working directory
 WORKDIR /app
 
-# Install dependencies
+# Install required tools
 RUN apk add --no-cache git
 
-# Copy go mod files
+# Copy go.mod and go.sum first (better caching)
 COPY go.mod go.sum ./
 
 # Download dependencies
 RUN go mod download
 
-# Copy source code
+# Copy the rest of the source code
 COPY . .
 
-# Build the application
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main .
+# Ensure go.sum is up to date (fixes missing deps like ttlcache/v3)
+RUN go mod tidy
 
+# Build the application binary
+RUN CGO_ENABLED=0 GOOS=linux go build -o main .
+
+# -------------------
 # Production stage
+# -------------------
 FROM alpine:latest
 
-# Install ca-certificates for HTTPS requests
-RUN apk --no-cache add ca-certificates
+# Install CA certificates for HTTPS requests
+RUN apk --no-cache add ca-certificates wget
 
 # Create non-root user
 RUN addgroup -g 1001 -S appgroup && \
     adduser -S appuser -u 1001 -G appgroup
 
+# Set working directory
 WORKDIR /app
 
-# Copy binary from builder stage
+# Copy binary from builder
 COPY --from=builder /app/main .
 
-# Change ownership
+# Fix ownership
 RUN chown appuser:appgroup /app/main
 
-# Switch to non-root user
+# Switch to non-root
 USER appuser
 
-# Expose port
+# Expose app port
 EXPOSE 8080
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1
+  CMD wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1
 
 # Run the application
 CMD ["./main"]
