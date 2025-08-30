@@ -27,6 +27,60 @@ type UploadResponse struct {
 // Track cancelled uploads by fileId
 var cancelledUploads sync.Map
 
+// --- Shared helpers to keep handlers compact and File Browser-like ---
+
+// openPartFile prepares the temp directory and opens the .part file, optionally preallocating size.
+func openPartFile(destPath, fileId, fileName string, startOffset, totalSize int64, replace bool) (*os.File, string, error) {
+	tmpDir := filepath.Join(destPath, ".uploads", fileId)
+	if err := os.MkdirAll(tmpDir, 0755); err != nil {
+		return nil, "", err
+	}
+	partPath := filepath.Join(tmpDir, fileName+".part")
+
+	flags := os.O_CREATE | os.O_WRONLY
+	if startOffset == 0 && replace {
+		flags |= os.O_TRUNC
+	}
+	f, err := os.OpenFile(partPath, flags, 0644)
+	if err != nil {
+		return nil, "", err
+	}
+
+	// Preallocate/truncate to total size when configured and known
+	if startOffset == 0 && totalSize > 0 && GetUploadConfig().PreallocateFiles {
+		// Best-effort; on sparse files this won't allocate blocks until written
+		_ = f.Truncate(totalSize)
+	}
+
+	if _, err := f.Seek(startOffset, io.SeekStart); err != nil {
+		f.Close()
+		return nil, "", err
+	}
+	return f, partPath, nil
+}
+
+// writeFrom streams data into the part file using a hardware-aware buffer.
+func writeFrom(dst *os.File, src io.Reader, userAgent string) (int64, error) {
+	buf, put := GetAdaptiveBuffer(userAgent)
+	defer put()
+	return io.CopyBuffer(dst, src, buf)
+}
+
+// finalizePart moves the .part file into its final path, overwriting when replace is true.
+func finalizePart(partPath, finalPath string, replace bool) error {
+	// If final exists and replace is true, remove it first to ensure atomic rename
+	if utils.FileExists(finalPath) && replace {
+		_ = os.Remove(finalPath)
+	}
+	if err := os.Rename(partPath, finalPath); err != nil {
+		if copyErr := copyFile(partPath, finalPath); copyErr != nil {
+			return err
+		}
+		_ = os.Remove(partPath)
+	}
+	return nil
+}
+
 func UploadFiles(c *gin.Context) {
 	// Parse multipart form
 	err := c.Request.ParseMultipartForm(32 << 20) // 32MB max memory
@@ -324,45 +378,25 @@ func UploadChunk(c *gin.Context) {
 		return
 	}
 
-	// Stream chunk directly into a single partial file to avoid extra IO
-	partPath := filepath.Join(tmpDir, fileName+".part")
-	flags := os.O_CREATE | os.O_WRONLY
-	// If this is the first chunk and we intend to replace, start with a truncated file
-	if chunkIndex == 0 {
-		flags = flags | os.O_TRUNC
+	// Compute offset; prefer provided chunk size
+	var offset int64
+	if optChunkSize > 0 {
+		offset = int64(chunkIndex) * optChunkSize
 	}
-	partFile, err := os.OpenFile(partPath, flags, 0644)
+
+	// Open .part and write
+	partFile, partPath, err := openPartFile(destPath, fileId, fileName, offset, 0, replace || chunkIndex == 0)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"ok": false, "error": "failed to open partial file"})
 		return
 	}
 	defer partFile.Close()
 
-	// Compute offset. Prefer provided chunk size, otherwise infer from src size
-	var offset int64
-	if optChunkSize > 0 {
-		offset = int64(chunkIndex) * optChunkSize
-	} else {
-		// Fallback: use current end of file for sequential writes
-		if st, err := partFile.Stat(); err == nil {
-			offset = st.Size()
-		}
-	}
-
-	// Position write at the correct offset
-	if _, err := partFile.Seek(offset, io.SeekStart); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"ok": false, "error": "failed to seek partial file"})
-		return
-	}
-
-	// Much larger buffer for high-speed uploads
-	buf := make([]byte, 16<<20) // 16 MiB buffer for better throughput
-	if _, err := io.CopyBuffer(partFile, src, buf); err != nil {
+	if _, err := writeFrom(partFile, src, c.GetHeader("User-Agent")); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"ok": false, "error": "failed to write chunk"})
 		return
 	}
 
-	// Optionally, try to update mtime to signal progress
 	_ = os.Chtimes(partPath, time.Now(), time.Now())
 
 	// Finalize if this is the last chunk
@@ -380,17 +414,11 @@ func UploadChunk(c *gin.Context) {
 			return
 		}
 
-		// Close before rename on Windows-like FS (harmless on Linux)
-		partFile.Close()
-
-		// Move assembled file into final location (overwrite if replace is true)
-		if err := os.Rename(partPath, finalPath); err != nil {
-			// Fallback: copy and remove
-			if copyErr := copyFile(partPath, finalPath); copyErr != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"ok": false, "error": "failed to move final file"})
-				return
-			}
-			_ = os.Remove(partPath)
+		// Close before rename then finalize
+		_ = partFile.Close()
+		if err := finalizePart(partPath, finalPath, replace); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"ok": false, "error": "failed to move final file"})
+			return
 		}
 
 		// Cleanup
@@ -570,29 +598,14 @@ func UploadPutRange(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"ok": false, "error": "failed to create tmp dir"})
 		return
 	}
-	partPath := filepath.Join(tmpDir, fileName+".part")
-
-	flags := os.O_CREATE | os.O_WRONLY
-	// Only truncate when writing from the very beginning and we intend to replace
-	if start == 0 && replace {
-		flags |= os.O_TRUNC
-	}
-	partFile, err := os.OpenFile(partPath, flags, 0644)
+	partFile, partPath, err := openPartFile(destPath, fileId, fileName, start, total, replace)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"ok": false, "error": "failed to open partial file"})
 		return
 	}
 	defer partFile.Close()
 
-	// Seek to offset and stream body
-	if _, err := partFile.Seek(start, io.SeekStart); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"ok": false, "error": "failed to seek partial file"})
-		return
-	}
-
-	// Stream data with optimized buffer size
-	buf := make([]byte, 32<<20) // 32 MiB buffer for high-speed streaming
-	written, err := io.CopyBuffer(partFile, c.Request.Body, buf)
+	written, err := writeFrom(partFile, c.Request.Body, c.GetHeader("User-Agent"))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"ok": false, "error": "failed to write chunk"})
 		return
@@ -613,21 +626,10 @@ func UploadPutRange(c *gin.Context) {
 			return
 		}
 
-		// Close before rename
 		_ = partFile.Close()
-
-		// If final exists and replace is true, remove it first to ensure atomic rename
-		if utils.FileExists(finalPath) && replace {
-			_ = os.Remove(finalPath)
-		}
-
-		if err := os.Rename(partPath, finalPath); err != nil {
-			// Fallback: copy then remove
-			if copyErr := copyFile(partPath, finalPath); copyErr != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"ok": false, "error": "failed to move final file"})
-				return
-			}
-			_ = os.Remove(partPath)
+		if err := finalizePart(partPath, finalPath, replace); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"ok": false, "error": "failed to move final file"})
+			return
 		}
 
 		_ = os.RemoveAll(tmpDir)

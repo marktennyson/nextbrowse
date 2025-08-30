@@ -42,10 +42,43 @@ export class UploadManager {
   private activeUploads = new Set<string>();
   private queue: string[] = [];
   private chunkSize = 16 * 1024 * 1024; // default 16MB chunks for better throughput
+  private optimalConfig: {
+    chunkSize: number;
+    maxConcurrentUploads: number;
+    bufferSize: number;
+    tusEndpoint: string;
+    supportsResumable: boolean;
+    extensions: string[];
+  } | null = null;
   private testMode = false; // Set to true for testing without server calls
   private replaceFlags: Map<string, boolean> = new Map();
   private abortControllers: Map<string, AbortController> = new Map();
   private pendingConflicts = new Set<string>();
+
+  constructor() {
+    // Load optimal configuration on initialization
+    this.loadOptimalConfig().catch(console.warn);
+  }
+
+  // Load hardware-optimized upload configuration from server
+  private async loadOptimalConfig(): Promise<void> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/tus/config`);
+      if (response.ok) {
+        this.optimalConfig = await response.json();
+        // Apply optimal settings
+        if (this.optimalConfig?.chunkSize) {
+          this.chunkSize = this.optimalConfig.chunkSize;
+        }
+        if (this.optimalConfig?.maxConcurrentUploads) {
+          this.concurrentUploads = this.optimalConfig.maxConcurrentUploads;
+        }
+        console.log("Loaded optimal upload config:", this.optimalConfig);
+      }
+    } catch (error) {
+      console.warn("Failed to load optimal config:", error);
+    }
+  }
 
   public async addFiles(
     files: FileList | File[],
@@ -172,16 +205,21 @@ export class UploadManager {
   }
 
   private pickChunkSize(fileSize: number): number {
-    // Heuristic: larger files get larger chunks to reduce overhead
+    // Use server-provided optimal chunk size if available
+    if (this.optimalConfig?.chunkSize) {
+      return this.optimalConfig.chunkSize;
+    }
+    
+    // Fallback heuristic: larger files get larger chunks to reduce overhead
     if (fileSize >= 2 * 1024 * 1024 * 1024) {
       // >= 2GB
       return 32 * 1024 * 1024; // 32MB
     }
     if (fileSize >= 512 * 1024 * 1024) {
-      // >= 512MB
+      // >= 512MB  
       return 24 * 1024 * 1024; // 24MB
     }
-    return this.chunkSize; // default 16MB
+    return this.chunkSize; // default based on hardware detection
   }
 
   private async checkResumeData(

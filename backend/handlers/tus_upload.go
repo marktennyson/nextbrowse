@@ -18,9 +18,12 @@ import (
 
 const (
 	// TUS Protocol Configuration
-	maxUploadWait    = 10 * time.Minute // Extended timeout for large files
-	defaultChunkSize = 10 * 1024 * 1024 // 10MB default chunk size
-	maxChunkSize     = 50 * 1024 * 1024 // 50MB max chunk size for high-speed connections
+	maxUploadWait = 10 * time.Minute // Extended timeout for large files
+	
+	// Hardware-adaptive settings
+	lowEndChunkSize   = 1 * 1024 * 1024   // 1MB for Raspberry Pi/low-end devices
+	midRangeChunkSize = 5 * 1024 * 1024   // 5MB for mid-range hardware
+	highEndChunkSize  = 25 * 1024 * 1024  // 25MB for high-end hardware
 )
 
 // Global cache to track active TUS uploads
@@ -53,6 +56,20 @@ func getActiveUploadLength(filePath string) (int64, error) {
 	}
 	return item.Value(), nil
 }
+
+// detectOptimalChunkSize determines the best chunk size based on hardware capabilities
+func detectOptimalChunkSize(userAgent string) int64 {
+	rec := RecommendedChunkSize(userAgent)
+	switch {
+	case rec <= 2<<20:
+		return lowEndChunkSize
+	case rec <= 8<<20:
+		return midRangeChunkSize
+	default:
+		return highEndChunkSize
+	}
+}
+
 
 // TUS POST: Initialize upload session
 func TusPostHandler(c *gin.Context) {
@@ -190,8 +207,21 @@ func TusPatchHandler(c *gin.Context) {
 		return
 	}
 
-	// Stream data with large buffer for better performance
-	buf := make([]byte, 1024*1024) // 1MB buffer
+	// Stream data with hardware-optimized buffer for better performance
+	userAgent := c.GetHeader("User-Agent")
+	optimalChunkSize := detectOptimalChunkSize(userAgent)
+	
+	var bufSize int64
+	switch optimalChunkSize {
+	case lowEndChunkSize:
+		bufSize = 256 * 1024 // 256KB buffer for low-end devices
+	case midRangeChunkSize:
+		bufSize = 1024 * 1024 // 1MB buffer for mid-range
+	default:
+		bufSize = 4 * 1024 * 1024 // 4MB buffer for high-end devices
+	}
+	
+	buf := make([]byte, bufSize)
 	bytesWritten, err := io.CopyBuffer(file, c.Request.Body, buf)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to write data"})
@@ -232,4 +262,35 @@ func TusDeleteHandler(c *gin.Context) {
 	completeUpload(filePath)
 
 	c.Status(http.StatusNoContent)
+}
+
+// GetOptimalConfig returns hardware-optimized upload configuration
+func GetOptimalConfig(c *gin.Context) {
+	userAgent := c.GetHeader("User-Agent")
+	chunkSize := detectOptimalChunkSize(userAgent)
+	
+	// Additional optimizations based on detected hardware
+	var maxConcurrentUploads int
+	var bufferSize int64
+	
+	switch chunkSize {
+	case lowEndChunkSize:
+		maxConcurrentUploads = 2  // Conservative for low-end devices
+		bufferSize = 256 * 1024   // 256KB buffer
+	case midRangeChunkSize:
+		maxConcurrentUploads = 4  // Moderate concurrency
+		bufferSize = 1024 * 1024  // 1MB buffer
+	default:
+		maxConcurrentUploads = 8  // High concurrency for powerful devices
+		bufferSize = 4 * 1024 * 1024 // 4MB buffer
+	}
+	
+	c.JSON(http.StatusOK, gin.H{
+		"chunkSize": chunkSize,
+		"maxConcurrentUploads": maxConcurrentUploads,
+		"bufferSize": bufferSize,
+		"tusEndpoint": "/api/tus",
+		"supportsResumable": true,
+		"extensions": []string{"creation", "termination", "checksum"},
+	})
 }

@@ -17,7 +17,7 @@ func main() {
 
 	// CORS configuration
 	cfg := cors.Config{
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowMethods:     []string{"GET", "HEAD", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
 		AllowCredentials: true,
 		// Dynamically allow any origin (nginx serves same-origin, but this also covers LAN IP access)
@@ -64,19 +64,16 @@ func main() {
 		tus.HEAD("/upload", handlers.TusHeadHandler)   // Get upload progress
 		tus.PATCH("/upload", handlers.TusPatchHandler) // Upload data
 		tus.DELETE("/upload", handlers.TusDeleteHandler) // Cancel upload
+		tus.GET("/config", handlers.GetOptimalConfig) // Get hardware-optimized config
 	}
 
-	// High-performance streaming uploads
-	fast := r.Group("/api/fast")
-	{
-		fast.PUT("/stream", handlers.FastStreamUpload)     // High-speed streaming
-		fast.POST("/parallel", handlers.ParallelChunkUpload) // Parallel chunks
-		fast.GET("/progress", handlers.GetUploadProgress)   // Real-time progress
-	}
 
 	// Health check
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})
+	})
+	r.HEAD("/health", func(c *gin.Context) {
+		c.Status(200)
 	})
 
 	// Start server
