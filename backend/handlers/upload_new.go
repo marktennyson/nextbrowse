@@ -368,22 +368,3 @@ func CancelUpload(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"ok": true, "message": "upload cancelled"})
 }
-
-// UploadPutRange handles HTTP PUT range uploads
-func UploadPutRange(c *gin.Context) {
-	// Simple implementation for PUT range uploads
-	c.JSON(http.StatusOK, gin.H{"ok": true, "message": "range upload completed"})
-}
-
-// GetOptimalConfig returns hardware-optimized upload configuration
-func GetOptimalConfig(c *gin.Context) {
-	// Return File Browser-style optimal config
-	config := map[string]interface{}{
-		"chunkSize":           2 * 1024 * 1024, // 2MB chunks
-		"maxConcurrentUploads": 3,              // Conservative for Pi
-		"maxFileSize":         10 * 1024 * 1024 * 1024, // 10GB
-		"resumable":           true,
-	}
-	
-	c.JSON(http.StatusOK, config)
-}

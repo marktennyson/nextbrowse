@@ -37,6 +37,7 @@ func main() {
 	{
 		fs.GET("/list", handlers.ListDirectory)
 		fs.GET("/read", handlers.ReadFile)
+		fs.GET("/upload/config", handlers.GetUploadConfigHandler) // Upload config
 		fs.POST("/upload", handlers.UploadFiles)
 		fs.POST("/upload-chunk", handlers.UploadChunk)
 		fs.POST("/upload-status", handlers.UploadStatus)
