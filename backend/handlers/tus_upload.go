@@ -21,7 +21,7 @@ const (
 	maxUploadWait = 10 * time.Minute // Extended timeout for large files
 	
 	// Hardware-adaptive settings
-	lowEndChunkSize   = 1 * 1024 * 1024   // 1MB for Raspberry Pi/low-end devices
+	lowEndChunkSize   = 64 * 1024         // 64KB for Raspberry Pi/low-end devices
 	midRangeChunkSize = 5 * 1024 * 1024   // 5MB for mid-range hardware
 	highEndChunkSize  = 25 * 1024 * 1024  // 25MB for high-end hardware
 )
@@ -61,7 +61,7 @@ func getActiveUploadLength(filePath string) (int64, error) {
 func detectOptimalChunkSize(userAgent string) int64 {
 	rec := RecommendedChunkSize(userAgent)
 	switch {
-	case rec <= 2<<20:
+	case rec <= 256<<10:
 		return lowEndChunkSize
 	case rec <= 8<<20:
 		return midRangeChunkSize
@@ -276,7 +276,7 @@ func GetOptimalConfig(c *gin.Context) {
 	switch chunkSize {
 	case lowEndChunkSize:
 		maxConcurrentUploads = 2  // Conservative for low-end devices
-		bufferSize = 256 * 1024   // 256KB buffer
+		bufferSize = 64 * 1024    // 64KB buffer to match small chunks
 	case midRangeChunkSize:
 		maxConcurrentUploads = 4  // Moderate concurrency
 		bufferSize = 1024 * 1024  // 1MB buffer

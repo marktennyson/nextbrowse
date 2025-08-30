@@ -1,8 +1,6 @@
 package handlers
 
 import (
-	"runtime"
-	"strings"
 	"sync"
 	"time"
 )
@@ -24,8 +22,8 @@ type UploadConfig struct {
 var (
 	// Default high-performance configuration
 	DefaultUploadConfig = &UploadConfig{
-		ChunkBufferSize:     8 << 20,     // sensible default, will adapt per-request
-		StreamBufferSize:    8 << 20,     // sensible default, will adapt per-request
+		ChunkBufferSize:     64 << 10,    // 64KB default chunks
+		StreamBufferSize:    32 << 10,    // 32KB default copy buffer
 		MaxConcurrentChunks: 8,           // Allow up to 8 parallel chunks
 		ChunkTimeout:        5 * time.Minute,
 		EnableCompression:   false,       // Disable compression for speed
@@ -81,39 +79,20 @@ func GetUploadConfig() *UploadConfig {
 // RecommendedChunkSize returns a hardware-aware chunk size (in bytes).
 // Small devices like Raspberry Pi perform better with smaller chunks to reduce latency.
 func RecommendedChunkSize(userAgent string) int64 {
-	// Detect low-end/ARM devices via UA hint first
-	ua := strings.ToLower(userAgent)
-	isARMUA := strings.Contains(ua, "raspberry") || strings.Contains(ua, "arm") || strings.Contains(ua, "aarch")
-
-	// Basic system heuristics
-	numCPU := runtime.NumCPU()
-	var ms runtime.MemStats
-	runtime.ReadMemStats(&ms)
-	sys := ms.Sys
-
-	// Prefer smaller chunks on constrained systems
-	switch {
-	case isARMUA && numCPU <= 4:
-		return 2 << 20 // 2 MiB for Pi/ARM class
-	case numCPU <= 2 || sys < 2<<30:
-		return 4 << 20 // 4 MiB for low-end
-	case numCPU <= 4 || sys < 4<<30:
-		return 8 << 20 // 8 MiB for mid-range
-	default:
-		return 16 << 20 // 16 MiB for high-end
-	}
+	// Force a small, latency-friendly chunk size for slower hardware
+	return 64 * 1024 // 64 KiB
 }
 
 // RecommendedBufferSize returns a hardware-aware buffer size (in bytes) for io.CopyBuffer.
 func RecommendedBufferSize(userAgent string) int {
-	// Tie buffer to ~half the chunk size to keep copy iterations low without huge allocations
+	// Tie buffer to ~half the chunk size; allow small floors for Pi/ARM
 	cs := RecommendedChunkSize(userAgent)
 	b := cs / 2
-	if b < 1<<20 { // never smaller than 1 MiB
-		b = 1 << 20
+	if b < 32<<10 { // floor at 32 KiB
+		b = 32 << 10
 	}
-	if b > 16<<20 { // cap to 16 MiB to avoid memory spikes
-		b = 16 << 20
+	if b > 4<<20 { // cap at 4 MiB
+		b = 4 << 20
 	}
 	return int(b)
 }
