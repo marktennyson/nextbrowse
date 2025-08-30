@@ -355,8 +355,8 @@ func UploadChunk(c *gin.Context) {
 		return
 	}
 
-	// Larger buffer for faster copy
-	buf := make([]byte, 4<<20) // 4 MiB buffer
+	// Much larger buffer for high-speed uploads
+	buf := make([]byte, 16<<20) // 16 MiB buffer for better throughput
 	if _, err := io.CopyBuffer(partFile, src, buf); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"ok": false, "error": "failed to write chunk"})
 		return
@@ -590,7 +590,8 @@ func UploadPutRange(c *gin.Context) {
 		return
 	}
 
-	buf := make([]byte, 8<<20) // 8 MiB buffer
+	// Stream data with optimized buffer size
+	buf := make([]byte, 32<<20) // 32 MiB buffer for high-speed streaming
 	written, err := io.CopyBuffer(partFile, c.Request.Body, buf)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"ok": false, "error": "failed to write chunk"})

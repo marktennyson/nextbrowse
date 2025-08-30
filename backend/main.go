@@ -41,6 +41,7 @@ func main() {
 		fs.POST("/upload-chunk", handlers.UploadChunk)
 		fs.POST("/upload-status", handlers.UploadStatus)
 		fs.POST("/upload-cancel", handlers.CancelUpload)
+		fs.PUT("/upload-range", handlers.UploadPutRange)
 		fs.POST("/copy", handlers.CopyFile)
 		fs.POST("/move", handlers.MoveFile)
 		fs.POST("/mkdir", handlers.CreateDirectory)
@@ -54,6 +55,23 @@ func main() {
 		fs.GET("/share/:shareId", handlers.GetShare)
 		fs.GET("/share/:shareId/access", handlers.AccessShare)
 		fs.GET("/share/:shareId/download", handlers.DownloadShare)
+	}
+
+	// TUS resumable upload protocol (for high-performance uploads)
+	tus := r.Group("/api/tus")
+	{
+		tus.POST("/upload", handlers.TusPostHandler)   // Initialize upload
+		tus.HEAD("/upload", handlers.TusHeadHandler)   // Get upload progress
+		tus.PATCH("/upload", handlers.TusPatchHandler) // Upload data
+		tus.DELETE("/upload", handlers.TusDeleteHandler) // Cancel upload
+	}
+
+	// High-performance streaming uploads
+	fast := r.Group("/api/fast")
+	{
+		fast.PUT("/stream", handlers.FastStreamUpload)     // High-speed streaming
+		fast.POST("/parallel", handlers.ParallelChunkUpload) // Parallel chunks
+		fast.GET("/progress", handlers.GetUploadProgress)   // Real-time progress
 	}
 
 	// Health check

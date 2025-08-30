@@ -8,8 +8,10 @@ import {
   FolderOpenIcon,
 } from "@heroicons/react/24/outline";
 import { getFileIcon, isTextFile } from "@/lib/file-utils";
+import { apiClient } from "@/lib/api-client";
 import FileContextMenu from "./FileContextMenu";
 import NewFileDialog from "./NewFileDialog";
+import RenameDialog from "@/components/RenameDialog";
 import toast from "react-hot-toast";
 
 interface FileItem {
@@ -43,11 +45,7 @@ interface FileTreeItemProps {
   onFileSelect: (path: string) => void;
   onToggleExpand: (path: string) => void;
   selectedFile?: string;
-  onContextMenu?: (
-    e: React.MouseEvent,
-    path: string,
-    isDirectory: boolean
-  ) => void;
+  onContextMenu?: (e: any, path: string, isDirectory: boolean) => void;
 }
 
 function FileTreeItem({
@@ -82,7 +80,7 @@ function FileTreeItem({
         `}
         style={{ paddingLeft: `${level * 16 + 8}px` }}
         onClick={handleClick}
-        onContextMenu={(e) => {
+        onContextMenu={(e: any) => {
           e.preventDefault();
           onContextMenu?.(e, node.path, node.type === "dir");
         }}
@@ -153,15 +151,18 @@ export default function FileTree({
     parentPath: "",
   });
 
+  const [renameState, setRenameState] = useState<{
+    open: boolean;
+    path: string;
+    name: string;
+    type: "file" | "dir";
+  }>({ open: false, path: "", name: "", type: "file" });
+
   const loadDirectory = async (path: string): Promise<FileTreeNode[]> => {
     try {
-      const response = await fetch(
-        `/api/fs/list?path=${encodeURIComponent(path)}`
-      );
-      const data = await response.json();
-
-      if (!data.ok) {
-        throw new Error(data.error || "Failed to load directory");
+      const data = (await apiClient.listDirectory(path)) as any;
+      if (!data?.ok) {
+        throw new Error(data?.error || "Failed to load directory");
       }
 
       return data.items
@@ -190,7 +191,7 @@ export default function FileTree({
     targetPath: string,
     updater: (node: FileTreeNode) => FileTreeNode
   ): FileTreeNode[] => {
-    return nodes.map((node) => {
+    return nodes.map((node: FileTreeNode) => {
       if (node.path === targetPath) {
         return updater(node);
       }
@@ -248,11 +249,7 @@ export default function FileTree({
     initializeTree();
   }, [rootPath]);
 
-  const onContextMenu = (
-    e: React.MouseEvent,
-    path: string,
-    isDirectory: boolean
-  ) => {
+  const onContextMenu = (e: any, path: string, isDirectory: boolean) => {
     setContextMenu({
       x: e.clientX,
       y: e.clientY,
@@ -266,49 +263,14 @@ export default function FileTree({
       const parentPath = newFileDialog.parentPath;
 
       if (isFolder) {
-        const response = await fetch("/api/fs/mkdir", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ path: parentPath, name }),
-        });
-
-        if (!response.ok) {
-          const data = await response.json();
-          throw new Error(data.error || "Failed to create folder");
-        }
+        const res = (await apiClient.createDirectory(parentPath, name)) as any;
+        if (!res?.ok) throw new Error(res?.error || "Failed to create folder");
       } else {
-        // Create empty file via single-chunk upload
-        const formData = new FormData();
-        formData.append("path", parentPath);
-        formData.append("fileName", name);
-        formData.append(
-          "fileId",
-          `ide_create_${Date.now()}_${Math.random().toString(36).slice(2)}`
-        );
-        formData.append("chunkIndex", "0");
-        formData.append("totalChunks", "1");
-        const emptyBlob = new Blob([], { type: "application/octet-stream" });
-        formData.append("chunk", emptyBlob, name);
-
-        const response = await fetch("/api/fs/upload-chunk", {
-          method: "POST",
-          body: formData,
-        });
-
-        if (!response.ok) {
-          let msg = "Failed to create file";
-          try {
-            const data = await response.json();
-            if (
-              data &&
-              typeof data === "object" &&
-              Object.prototype.hasOwnProperty.call(data as object, "error")
-            ) {
-              msg = (data as { error?: string }).error || msg;
-            }
-          } catch {}
-          throw new Error(msg);
-        }
+        const res = (await apiClient.createFile(
+          parentPath === "/" ? `/${name}` : `${parentPath}/${name}`,
+          ""
+        )) as any;
+        if (!res?.ok) throw new Error(res?.error || "Failed to create file");
 
         onFileCreate?.(
           parentPath === "/" ? `/${name}` : `${parentPath}/${name}`
@@ -344,16 +306,8 @@ export default function FileTree({
     }
 
     try {
-      const response = await fetch("/api/fs/delete", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ path }),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Failed to delete");
-      }
+      const res = (await apiClient.deleteFile(path)) as any;
+      if (!res?.ok) throw new Error(res?.error || "Failed to delete");
 
       onFileDelete?.(path);
 
@@ -378,6 +332,86 @@ export default function FileTree({
       toast.error(
         `Failed to delete: ${
           error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
+    }
+  };
+
+  const handleRename = async (newName: string) => {
+    const { path, type } = renameState;
+    const parentPath = path.substring(0, path.lastIndexOf("/")) || "/";
+    const dest =
+      parentPath === "/" ? `/${newName}` : `${parentPath}/${newName}`;
+    try {
+      const res = (await apiClient.moveFile(path, dest)) as any;
+      if (!res?.ok)
+        throw new Error(res?.error || res?.message || "Failed to rename");
+
+      const children = await loadDirectory(parentPath);
+      if (parentPath === rootPath) {
+        setTree(children);
+      } else {
+        setTree((prev) =>
+          updateNodeInTree(prev, parentPath, (node) => ({
+            ...node,
+            children,
+            isExpanded: true,
+          }))
+        );
+      }
+
+      if (selectedFile && selectedFile === path) {
+        onFileSelect(dest);
+      }
+      toast.success(`${type === "dir" ? "Folder" : "File"} renamed`);
+    } catch (err) {
+      console.error("Rename error:", err);
+      toast.error(
+        `Failed to rename: ${
+          err instanceof Error ? err.message : "Unknown error"
+        }`
+      );
+    } finally {
+      setRenameState({ open: false, path: "", name: "", type: "file" });
+    }
+  };
+
+  const handleDuplicate = async (path: string) => {
+    const name = path.split("/").pop() || "";
+    const parentPath = path.substring(0, path.lastIndexOf("/")) || "/";
+    const { base, ext } = splitName(name);
+    const baseCandidate = `${base} copy`;
+    let candidate = `${baseCandidate}${ext}`;
+    try {
+      const children = await loadDirectory(parentPath);
+      const existing = new Set(children.map((c) => c.name));
+      let i = 2;
+      while (existing.has(candidate)) {
+        candidate = `${baseCandidate} ${i}${ext}`;
+        i += 1;
+      }
+      const dest =
+        parentPath === "/" ? `/${candidate}` : `${parentPath}/${candidate}`;
+      const res = (await apiClient.copyFile(path, dest)) as any;
+      if (!res?.ok)
+        throw new Error(res?.error || res?.message || "Failed to duplicate");
+
+      const refreshed = await loadDirectory(parentPath);
+      if (parentPath === rootPath) setTree(refreshed);
+      else
+        setTree((prev) =>
+          updateNodeInTree(prev, parentPath, (node) => ({
+            ...node,
+            children: refreshed,
+            isExpanded: true,
+          }))
+        );
+      toast.success("Duplicated successfully");
+    } catch (err) {
+      console.error("Duplicate error:", err);
+      toast.error(
+        `Failed to duplicate: ${
+          err instanceof Error ? err.message : "Unknown error"
         }`
       );
     }
@@ -428,15 +462,19 @@ export default function FileTree({
             setNewFileDialog({ isOpen: true, type: "folder", parentPath });
             setContextMenu(null);
           }}
-          onRename={() => {
-            // TODO: Implement rename
-            toast.error("Rename functionality not yet implemented");
+          onRename={(targetPath) => {
+            const n = targetPath.split("/").pop() || "";
+            setRenameState({
+              open: true,
+              path: targetPath,
+              name: n,
+              type: contextMenu.isDirectory ? "dir" : "file",
+            });
             setContextMenu(null);
           }}
           onDelete={handleDelete}
-          onDuplicate={() => {
-            // TODO: Implement duplicate
-            toast.error("Duplicate functionality not yet implemented");
+          onDuplicate={(p) => {
+            handleDuplicate(p);
             setContextMenu(null);
           }}
           onOpen={onFileSelect}
@@ -451,6 +489,22 @@ export default function FileTree({
         onClose={() => setNewFileDialog({ ...newFileDialog, isOpen: false })}
         onConfirm={handleCreateFile}
       />
+
+      <RenameDialog
+        open={renameState.open}
+        itemName={renameState.name}
+        itemType={renameState.type}
+        onClose={() =>
+          setRenameState({ open: false, path: "", name: "", type: "file" })
+        }
+        onConfirm={handleRename}
+      />
     </div>
   );
+}
+
+function splitName(name: string): { base: string; ext: string } {
+  const lastDot = name.lastIndexOf(".");
+  if (lastDot <= 0) return { base: name, ext: "" };
+  return { base: name.slice(0, lastDot), ext: name.slice(lastDot) };
 }
