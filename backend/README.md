@@ -7,11 +7,13 @@ This is the Go-based API server for NextBrowse file browser.
 1. Install Go 1.22 or later
 
 2. Download dependencies:
+
 ```bash
 go mod download
 ```
 
 3. Start development server:
+
 ```bash
 go run main.go
 ```
@@ -21,21 +23,25 @@ go run main.go
 We use pre-built binaries for Docker to avoid building on the server. The Linux binary (`nextbrowse-backend`) is committed to git and used by Docker.
 
 ### Quick Build (Linux only - for Docker):
+
 ```bash
 ./build.sh
 ```
 
 ### Build All Platforms:
+
 ```bash
 ./build-all.sh
 ```
 
 This creates:
+
 - `nextbrowse-backend` (Linux - for Docker, committed to git)
 - `nextbrowse-backend-macos` (macOS - for local development, gitignored)
 - `nextbrowse-backend-windows.exe` (Windows - gitignored)
 
 ### Manual Build:
+
 ```bash
 # For Docker/Linux
 CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o nextbrowse-backend .
@@ -47,6 +53,7 @@ go build -o nextbrowse-backend-macos .
 ## Environment Variables
 
 Set these environment variables:
+
 ```bash
 export ROOT_PATH="/path/to/files"
 export PORT="8080"
