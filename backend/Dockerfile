@@ -1,31 +1,5 @@
 # -------------------
-# Build stage
-# -------------------
-FROM golang:1.23-alpine AS builder
-
-# Set working directory
-WORKDIR /app
-
-# Install required tools
-RUN apk add --no-cache git
-
-# Copy go.mod and go.sum first (better caching)
-COPY go.mod go.sum ./
-
-# Download dependencies
-RUN go mod download
-
-# Copy the rest of the source code
-COPY . .
-
-# Ensure go.sum is up to date (fixes missing deps like ttlcache/v3)
-RUN go mod tidy
-
-# Build the application binary
-RUN CGO_ENABLED=0 GOOS=linux go build -o main .
-
-# -------------------
-# Production stage
+# Production stage using pre-built binary
 # -------------------
 FROM alpine:latest
 
@@ -39,8 +13,8 @@ RUN addgroup -g 1001 -S appgroup && \
 # Set working directory
 WORKDIR /app
 
-# Copy binary from builder
-COPY --from=builder /app/main .
+# Copy pre-built binary (built locally and committed to git)
+COPY nextbrowse-backend ./main
 
 # Fix ownership
 RUN chown appuser:appgroup /app/main

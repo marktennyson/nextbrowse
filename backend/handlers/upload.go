@@ -13,15 +13,10 @@ import (
 	"nextbrowse-backend/utils"
 )
 
-type UploadResponse struct {
-	OK      bool     `json:"ok"`
-	Files   []string `json:"files"`
-	Errors  []string `json:"errors,omitempty"`
-	Message string   `json:"message"`
-}
+// UploadResponse is defined in upload_new.go to avoid duplicate type declarations.
 
-// writeFile streams content directly to destination file - File Browser style
-func writeFile(dst string, src io.Reader, overwrite bool) error {
+// writeFileStream streams content directly to destination file - File Browser style
+func writeFileStream(dst string, src io.Reader, overwrite bool) error {
 	dir := filepath.Dir(dst)
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return err
@@ -44,7 +39,7 @@ func writeFile(dst string, src io.Reader, overwrite bool) error {
 	return err
 }
 
-func UploadFiles(c *gin.Context) {
+func UploadFilesLegacy(c *gin.Context) {
 	// Parse multipart form
 	err := c.Request.ParseMultipartForm(32 << 20) // 32MB max memory
 	if err != nil {
@@ -119,7 +114,7 @@ func UploadFiles(c *gin.Context) {
 		}
 
 		// Write file using File Browser style streaming
-		err = writeFile(outPath, src, replace)
+		err = writeFileStream(outPath, src, replace)
 		src.Close()
 
 		if err != nil {
@@ -155,7 +150,7 @@ func UploadFiles(c *gin.Context) {
 }
 
 // Simplified chunked upload - File Browser style with single part file
-func UploadChunk(c *gin.Context) {
+func UploadChunkLegacy(c *gin.Context) {
 	// Parse multipart form
 	if err := c.Request.ParseMultipartForm(32 << 20); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"ok": false, "error": "failed to parse multipart form"})
@@ -278,7 +273,7 @@ func UploadChunk(c *gin.Context) {
 }
 
 // Simple upload status check
-func UploadStatus(c *gin.Context) {
+func UploadStatusLegacy(c *gin.Context) {
 	type UploadStatusRequest struct {
 		FileId    string `json:"fileId"`
 		FileName  string `json:"fileName"`
@@ -339,8 +334,8 @@ func UploadStatus(c *gin.Context) {
 	})
 }
 
-// Cancel upload by cleaning temp files
-func CancelUpload(c *gin.Context) {
+// Cancel upload by cleaning temp files (legacy handler renamed to avoid duplicate declaration)
+func CancelUploadLegacy(c *gin.Context) {
 	type CancelRequest struct {
 		FileId string `json:"fileId"`
 		Path   string `json:"pathParam"`

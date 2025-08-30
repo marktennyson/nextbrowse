@@ -16,9 +16,32 @@ go mod download
 go run main.go
 ```
 
-4. Build binary:
+## Building for Docker/Production
+
+We use pre-built binaries for Docker to avoid building on the server. The Linux binary (`nextbrowse-backend`) is committed to git and used by Docker.
+
+### Quick Build (Linux only - for Docker):
 ```bash
-go build -o nextbrowse-backend
+./build.sh
+```
+
+### Build All Platforms:
+```bash
+./build-all.sh
+```
+
+This creates:
+- `nextbrowse-backend` (Linux - for Docker, committed to git)
+- `nextbrowse-backend-macos` (macOS - for local development, gitignored)
+- `nextbrowse-backend-windows.exe` (Windows - gitignored)
+
+### Manual Build:
+```bash
+# For Docker/Linux
+CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o nextbrowse-backend .
+
+# For local development (macOS)
+go build -o nextbrowse-backend-macos .
 ```
 
 ## Environment Variables
