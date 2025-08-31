@@ -56,7 +56,7 @@ Set these environment variables:
 
 ```bash
 export ROOT_PATH="/path/to/files"
-export PORT="8080"
+export PORT="9932"
 export NEXT_PUBLIC_BASE_URL="http://localhost:3000"
 ```
 

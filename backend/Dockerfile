@@ -1,7 +1,7 @@
 # -------------------
 # Build stage
 # -------------------
-FROM golang:1.21-alpine AS builder
+FROM golang:1.23-alpine AS builder
 
 # Install git for go modules
 RUN apk add --no-cache git
@@ -46,11 +46,11 @@ RUN chown appuser:appgroup /app/main
 USER appuser
 
 # Expose app port
-EXPOSE 8080
+EXPOSE 9932
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1
+  CMD wget --no-verbose --tries=1 --spider http://localhost:9932/health || exit 1
 
 # Run the application
 CMD ["./main"]

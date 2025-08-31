@@ -20,7 +20,7 @@ fi
 
 # Set default environment variables if not set
 export ROOT_PATH=${ROOT_PATH:-"/tmp/nextbrowse-test"}
-export PORT=${PORT:-"8080"}
+export PORT=${PORT:-"9932"}
 export NEXT_PUBLIC_BASE_URL=${NEXT_PUBLIC_BASE_URL:-"http://localhost:3000"}
 
 # Create test directory if it doesn't exist

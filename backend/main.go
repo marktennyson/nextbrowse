@@ -80,7 +80,7 @@ func main() {
 	// Start server
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "8080"
+		port = "9932"
 	}
 
 	log.Printf("Starting Go backend server on port %s", port)

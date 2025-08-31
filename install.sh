@@ -133,7 +133,7 @@ ROOT_PATH=$ROOT_PATH
 PORT=2929
 
 # Internal configuration (for containers)
-GO_PORT=8080
+GO_PORT=9932
 NEXT_PORT=3000
 NEXT_PUBLIC_BASE_URL=http://localhost:2929
 NEXT_PUBLIC_GO_API_URL=

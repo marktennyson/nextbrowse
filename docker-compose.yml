@@ -8,10 +8,10 @@ services:
       - ${ROOT_PATH:-./data}:/app/static:rw
     environment:
       - ROOT_PATH=/app/static
-      - PORT=8080
+      - PORT=9932
       - NEXT_PUBLIC_BASE_URL=http://localhost:2929
     expose:
-      - "8080"
+      - "9932"
     restart: unless-stopped
     healthcheck:
       test:
@@ -21,7 +21,7 @@ services:
           "--no-verbose",
           "--tries=1",
           "--spider",
-          "http://localhost:8080/health",
+          "http://localhost:9932/health",
         ]
       interval: 30s
       timeout: 10s

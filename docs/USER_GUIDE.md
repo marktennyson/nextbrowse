@@ -47,7 +47,7 @@ Set in your .env (used by docker-compose):
 - ROOT_PATH: Absolute path to the directory you want to browse (mounted read/write)
 - PORT: Host port for nginx (default 2929)
 - NEXT_PUBLIC_BASE_URL: Public base URL used in generated share links (default http://localhost:2929)
-- NEXT_PUBLIC_GO_API_URL: Usually blank in Docker (frontend calls Go via nginx). If running frontend alone, set to http://localhost:8080
+- NEXT_PUBLIC_GO_API_URL: Usually blank in Docker (frontend calls Go via nginx). If running frontend alone, set to http://localhost:9932
 
 ## Using the app
 
@@ -112,11 +112,11 @@ If you see 404 or errors on /api/fs/create or /api/fs/write, that’s expected w
 ## Advanced: Running without Docker
 
 - Backend (Go 1.22+):
-  - env: ROOT_PATH=/absolute/path NEXT_PUBLIC_BASE_URL=http://localhost:3000 PORT=8080
+  - env: ROOT_PATH=/absolute/path NEXT_PUBLIC_BASE_URL=http://localhost:3000 PORT=9932
   - run: go run ./backend
 - Frontend (Node 18+):
   - cd frontend && npm install
-  - env: NEXT_PUBLIC_GO_API_URL=http://localhost:8080
+  - env: NEXT_PUBLIC_GO_API_URL=http://localhost:9932
   - dev: npm run dev (http://localhost:3000)
   - prod: npm run build && npm start
 - Reverse proxy: Configure nginx or another proxy to serve frontend and proxy /api/fs to the Go backend.
