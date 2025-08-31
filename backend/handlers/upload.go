@@ -15,7 +15,7 @@ import (
 
 // UploadResponse is defined in upload_new.go to avoid duplicate type declarations.
 
-// writeFileStream streams content directly to destination file - File Browser style
+// writeFileStream streams content directly to destination file - File Browser style with larger buffer
 func writeFileStream(dst string, src io.Reader, overwrite bool) error {
 	dir := filepath.Dir(dst)
 	if err := os.MkdirAll(dir, 0755); err != nil {
@@ -35,13 +35,15 @@ func writeFileStream(dst string, src io.Reader, overwrite bool) error {
 	}
 	defer file.Close()
 
-	_, err = io.Copy(file, src)
+	// Use larger buffer for better performance like filebrowser
+	buf := make([]byte, 1024*1024) // 1MB buffer instead of default 32KB
+	_, err = io.CopyBuffer(file, src, buf)
 	return err
 }
 
 func UploadFilesLegacy(c *gin.Context) {
-	// Parse multipart form
-	err := c.Request.ParseMultipartForm(32 << 20) // 32MB max memory
+	// Parse multipart form with larger memory limit for better performance
+	err := c.Request.ParseMultipartForm(256 << 20) // 256MB max memory like filebrowser
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"ok":    false,
@@ -151,8 +153,8 @@ func UploadFilesLegacy(c *gin.Context) {
 
 // Simplified chunked upload - File Browser style with single part file
 func UploadChunkLegacy(c *gin.Context) {
-	// Parse multipart form
-	if err := c.Request.ParseMultipartForm(32 << 20); err != nil {
+	// Parse multipart form with larger memory limit for better performance
+	if err := c.Request.ParseMultipartForm(256 << 20); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"ok": false, "error": "failed to parse multipart form"})
 		return
 	}
@@ -234,8 +236,9 @@ func UploadChunkLegacy(c *gin.Context) {
 	}
 	defer file.Close()
 
-	// Stream chunk data directly - File Browser style
-	_, err = io.Copy(file, src)
+	// Stream chunk data directly with large buffer - File Browser style
+	buf := make([]byte, 1024*1024) // 1MB buffer for better performance
+	_, err = io.CopyBuffer(file, src, buf)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"ok": false, "error": "failed to write chunk"})
 		return
@@ -318,7 +321,7 @@ func UploadStatusLegacy(c *gin.Context) {
 		// Calculate uploaded chunks based on file size
 		uploadedChunks := int(st.Size() / req.ChunkSize)
 		uploaded := make([]int, 0, uploadedChunks)
-		for i := 0; i < uploadedChunks; i++ {
+		for i := range uploadedChunks {
 			uploaded = append(uploaded, i)
 		}
 		c.JSON(http.StatusOK, UploadStatusResponse{
@@ -372,10 +375,10 @@ func UploadPutRange(c *gin.Context) {
 
 // GetOptimalConfig returns hardware-optimized upload configuration
 func GetOptimalConfig(c *gin.Context) {
-	// Return File Browser-style optimal config
-	config := map[string]interface{}{
-		"chunkSize":           2 * 1024 * 1024, // 2MB chunks
-		"maxConcurrentUploads": 3,              // Conservative for Pi
+	// Return File Browser-style optimal config with better performance settings
+	config := map[string]any{
+		"chunkSize":           8 * 1024 * 1024, // 8MB chunks for better performance
+		"maxConcurrentUploads": 6,              // Increased concurrency
 		"maxFileSize":         10 * 1024 * 1024 * 1024, // 10GB
 		"resumable":           true,
 	}

@@ -119,8 +119,9 @@ func TusPatchHandler(c *gin.Context) {
 		return
 	}
 
-	// Stream data directly - File Browser style
-	written, err := io.Copy(file, c.Request.Body)
+	// Stream data directly with large buffer - File Browser style
+	buf := make([]byte, 1024*1024) // 1MB buffer for better performance
+	written, err := io.CopyBuffer(file, c.Request.Body, buf)
 	if err != nil {
 		c.Header("Tus-Resumable", "1.0.0")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Upload failed"})

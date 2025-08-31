@@ -15,8 +15,8 @@ type UploadConfig struct {
 // Return File Browser-style upload configuration
 func GetUploadConfigHandler(c *gin.Context) {
 	config := UploadConfig{
-		ChunkSize:           2 * 1024 * 1024, // 2MB - File Browser default
-		MaxConcurrentUploads: 3,               // Keep it simple
+		ChunkSize:           8 * 1024 * 1024, // 8MB chunks for better performance like filebrowser
+		MaxConcurrentUploads: 6,               // Increased concurrency for better throughput
 		MaxFileSize:         10 * 1024 * 1024 * 1024, // 10GB max
 	}
 

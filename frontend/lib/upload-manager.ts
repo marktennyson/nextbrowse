@@ -38,10 +38,10 @@ export class UploadManager {
     onReplace: () => void,
     onCancel: () => void
   ) => void;
-  private concurrentUploads = 4;
+  private concurrentUploads = 6; // Match backend default
   private activeUploads = new Set<string>();
   private queue: string[] = [];
-  private chunkSize = 16 * 1024 * 1024; // default 16MB chunks for better throughput
+  private chunkSize = 8 * 1024 * 1024; // Match backend default 8MB chunks
   private optimalConfig: {
     chunkSize: number;
     maxConcurrentUploads: number;
