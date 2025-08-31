@@ -20,7 +20,7 @@ go run main.go
 
 ## Building for Docker/Production
 
-We use pre-built binaries for Docker to avoid building on the server. The Linux binary (`nextbrowse-backend`) is committed to git and used by Docker.
+We use a prebuilt Linux binary (`nextbrowse-backend`) to avoid building on the end-user machine. This file can be committed to the repo and is used by the prebuilt compose override.
 
 ### Quick Build (Linux only - for Docker):
 
@@ -52,12 +52,12 @@ go build -o nextbrowse-backend-macos .
 
 ## Environment Variables
 
-Set these environment variables:
+The Docker setup reads variables from the root `.env`. For local runs you can export:
 
 ```bash
 export ROOT_PATH="/path/to/files"
 export PORT="9932"
-export NEXT_PUBLIC_BASE_URL="http://localhost:3000"
+export NEXT_PUBLIC_BASE_URL="http://localhost:2929"
 ```
 
 ## Project Structure

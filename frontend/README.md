@@ -5,23 +5,27 @@ This is the Next.js 15 frontend application for NextBrowse file browser.
 ## Development Setup
 
 1. Install dependencies:
+
 ```bash
 npm install
 ```
 
 2. Start development server:
+
 ```bash
 npm run dev
 ```
 
 3. Build for production:
+
 ```bash
 npm run build
 ```
 
 ## Environment Variables
 
-Create a `.env.local` file with:
+Use the project root `.env` (copy from `.env.example`). For dev without Docker you can set:
+
 ```bash
 NEXT_PUBLIC_BASE_URL=http://localhost:3000
 NEXT_PUBLIC_GO_API_URL=http://localhost:9932

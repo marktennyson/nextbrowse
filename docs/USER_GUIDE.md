@@ -29,7 +29,8 @@ NEXT_PUBLIC_BASE_URL=http://localhost:2929
 
 3. Start the stack:
 
-- Build and run: docker-compose up -d
+- Run installer: `./install.sh`
+- Start/Restart: `./restart.sh`
 - Open: http://localhost:2929
 
 That’s it. Your files are mounted read/write into the app’s /app/static (nginx serves downloads from there; the Go API does the rest).
@@ -42,7 +43,7 @@ That’s it. Your files are mounted read/write into the app’s /app/static (ngi
 
 ## Environment variables
 
-Set in your .env (used by docker-compose):
+Set in your .env (used by Docker Compose):
 
 - ROOT_PATH: Absolute path to the directory you want to browse (mounted read/write)
 - PORT: Host port for nginx (default 2929)
