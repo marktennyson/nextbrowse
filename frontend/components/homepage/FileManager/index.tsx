@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import LoadingSpinner from "../LoadingSpinner";
 import FileManagerContent from "./FileManagerContent";
 import { useFileData } from "./useFileData";
@@ -70,6 +70,30 @@ export default function FileManager() {
   });
 
   const handleSelectAll = () => selectAll(filteredItems);
+
+  // Add keyboard shortcut for select all (Cmd+A / Ctrl+A)
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Only trigger if not focused on an input element and if we have items to select
+      const target = event.target as HTMLElement;
+      if (
+        target?.tagName === 'INPUT' || 
+        target?.tagName === 'TEXTAREA' || 
+        target?.contentEditable === 'true' ||
+        filteredItems.length === 0
+      ) {
+        return;
+      }
+
+      if ((event.metaKey || event.ctrlKey) && event.key === 'a') {
+        event.preventDefault();
+        handleSelectAll();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [filteredItems, handleSelectAll]);
 
   if (loading && allItems.length === 0) {
     return <LoadingSpinner />;
