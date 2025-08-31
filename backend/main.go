@@ -37,12 +37,6 @@ func main() {
 	{
 		fs.GET("/list", handlers.ListDirectory)
 		fs.GET("/read", handlers.ReadFile)
-		fs.GET("/upload/config", handlers.GetUploadConfigHandler) // Upload config
-		fs.POST("/upload", handlers.UploadFiles)
-		fs.POST("/upload-chunk", handlers.UploadChunk)
-		fs.POST("/upload-status", handlers.UploadStatus)
-		fs.POST("/upload-cancel", handlers.CancelUpload)
-		fs.PUT("/upload-range", handlers.UploadPutRange)
 		fs.POST("/copy", handlers.CopyFile)
 		fs.POST("/move", handlers.MoveFile)
 		fs.POST("/mkdir", handlers.CreateDirectory)
@@ -58,14 +52,15 @@ func main() {
 		fs.GET("/share/:shareId/download", handlers.DownloadShare)
 	}
 
-	// TUS resumable upload protocol (for high-performance uploads)
+	// TUS 1.0.0 Resumable File Upload endpoints
 	tus := r.Group("/api/tus")
 	{
-		tus.POST("/upload", handlers.TusPostHandler)   // Initialize upload
-		tus.HEAD("/upload", handlers.TusHeadHandler)   // Get upload progress
-		tus.PATCH("/upload", handlers.TusPatchHandler) // Upload data
-		tus.DELETE("/upload", handlers.TusDeleteHandler) // Cancel upload
-		tus.GET("/config", handlers.GetOptimalConfig) // Get hardware-optimized config
+		tus.OPTIONS("/files", handlers.TusOptionsHandler)    // TUS discovery
+		tus.POST("/files", handlers.TusPostHandler)          // Create upload
+		tus.HEAD("/files/:id", handlers.TusHeadHandler)      // Get upload status  
+		tus.PATCH("/files/:id", handlers.TusPatchHandler)    // Upload chunks
+		tus.DELETE("/files/:id", handlers.TusDeleteHandler)  // Cancel upload
+		tus.GET("/config", handlers.GetTusConfig)            // Get TUS configuration
 	}
 
 

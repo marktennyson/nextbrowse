@@ -1,3 +1,7 @@
+// Legacy upload manager - DEPRECATED - Use TUS upload manager instead
+// This file is kept for backward compatibility during migration
+// Import { TusUploadManager } from './tus-upload-manager' instead
+
 // API client configuration - same as api-client.ts
 const API_BASE_URL = process.env.NEXT_PUBLIC_GO_API_URL || "";
 
