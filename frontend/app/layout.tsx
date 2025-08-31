@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "react-hot-toast";
+import ErrorBoundary from "../components/ErrorBoundary";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -14,9 +15,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "NextBrowse 2026 - Futuristic File Explorer",
+  title: "NextBrowse - Modern File Browser",
   description:
-    "A next-generation file browser with holographic UI and advanced AI features",
+    "A modern, secure file browser built with Next.js and Go for browsing and managing files through a web interface",
 };
 
 export default function RootLayout({
@@ -42,21 +43,16 @@ export default function RootLayout({
           }}
         />
         <div className="relative min-h-screen overflow-hidden">
-          <div
-            className="absolute inset-0"
-            style={{
-              background: "rgb(9 9 11)",
-              backgroundImage:
-                "linear-gradient(135deg, rgba(59,130,246,0.04), rgba(139,92,246,0.04))",
-            }}
-          />
+          <div className="absolute inset-0 bg-gradient-dark" />
           {/* Subtle grid overlay */}
           <div className="pointer-events-none absolute inset-0 grid-pattern opacity-10" />
 
           {/* Main content with dark glass surface */}
           <div className="relative z-10 min-h-screen">
             <div className="min-h-screen bg-black/20">
-              {children}
+              <ErrorBoundary>
+                {children}
+              </ErrorBoundary>
             </div>
           </div>
         </div>

@@ -71,9 +71,36 @@ func DownloadFile(c *gin.Context) {
 	c.Header("Content-Disposition", "attachment; filename=\""+filename+"\"")
 	c.Header("Content-Type", "application/octet-stream")
 	c.Header("Content-Length", fmt.Sprintf("%d", fileInfo.Size()))
+	c.Header("Accept-Ranges", "bytes")
+	c.Header("Cache-Control", "no-cache")
 
-	// Stream file to client
-	c.File(safePath)
+	// Open file for streaming
+	file, err := os.Open(safePath)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"ok":    false,
+			"error": "Failed to open file for reading",
+		})
+		return
+	}
+	defer file.Close()
+
+	// Stream file with optimized buffer size (64KB chunks)
+	c.Status(http.StatusOK)
+	buffer := make([]byte, 65536) // 64KB buffer
+	for {
+		n, err := file.Read(buffer)
+		if n > 0 {
+			c.Writer.Write(buffer[:n])
+			c.Writer.Flush()
+		}
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			break
+		}
+	}
 }
 
 func DownloadMultiple(c *gin.Context) {
@@ -176,8 +203,9 @@ func addToZip(zw *zip.Writer, sourcePath, basePath string) error {
 		}
 		defer srcFile.Close()
 
-		// Copy file content
-		_, err = io.Copy(zipFile, srcFile)
+		// Copy file content with optimized buffer
+		buffer := make([]byte, 65536) // 64KB buffer
+		_, err = io.CopyBuffer(zipFile, srcFile, buffer)
 		return err
 	})
 }

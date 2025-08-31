@@ -149,7 +149,7 @@ export default function IDE({
 
       setIsLoading(true);
       try {
-        const data = await apiClient.readFile(path);
+        const data = await apiClient.readFile(path) as any;
         if (!data.ok) throw new Error(data.error || "Failed to load file");
 
         const language = getFileLanguage(path.split("/").pop() || "");

@@ -10,25 +10,12 @@ services:
     volumes:
       - ${ROOT_PATH:-./data}:/app/static:rw
       # Prebuilt backend binaries (amd64 and arm64); the container picks at runtime
-      - ./backend/nextbrowse-backend:/app/main:ro
-      - ./backend/backend_arm64:/app/main_arm64:ro
+      - ./backend/nextbrowse-backend-linux-amd64:/app/main:ro
+      - ./backend/nextbrowse-backend-linux-arm64:/app/main_arm64:ro
     expose:
       - "9932"
     restart: unless-stopped
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "wget",
-          "--no-verbose",
-          "--tries=1",
-          "--spider",
-          "http://localhost:9932/health",
-        ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+    # Health check disabled for simplicity in prebuilt mode
     command:
       - /bin/sh
       - -c
@@ -36,9 +23,9 @@ services:
         apk add --no-cache ca-certificates wget >/dev/null 2>&1;
         ARCH=$(uname -m);
         if [ "$ARCH" = aarch64 ] || [ "$ARCH" = arm64 ]; then
-          chmod +x /app/main_arm64 && exec /app/main_arm64;
+          exec /app/main_arm64;
         else
-          chmod +x /app/main && exec /app/main;
+          exec /app/main;
         fi
 
   nextjs:
@@ -53,10 +40,9 @@ services:
       - NEXT_PUBLIC_GO_API_URL=${NEXT_PUBLIC_GO_API_URL:-}
     # Run with standalone Next.js server from prebuilt artifacts
     volumes:
-      - ./frontend/.next/standalone:/app:ro
-      - ./frontend/.next/static:/app/.next/static:ro
-      - ./frontend/public:/app/public:ro
-      - ${ROOT_PATH:-./data}:/app/static:rw
+      - ./frontend/.next/standalone:/app
+      - ./frontend/.next/static:/app/.next/static
+      - ./frontend/public:/app/public
     expose:
       - "3000"
     command: ["node", "server.js"]

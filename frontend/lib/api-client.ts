@@ -2,6 +2,134 @@
 // In Docker setup, API calls go through nginx proxy, so we use relative URLs
 const API_BASE_URL = process.env.NEXT_PUBLIC_GO_API_URL || "";
 
+// Enhanced error handling
+class APIError extends Error {
+  constructor(
+    message: string,
+    public status?: number,
+    public code?: string,
+    public details?: any
+  ) {
+    super(message);
+    this.name = 'APIError';
+  }
+}
+
+// Request configuration
+interface RequestConfig {
+  timeout?: number;
+  retries?: number;
+  retryDelay?: number;
+}
+
+// Default configuration
+const DEFAULT_CONFIG: RequestConfig = {
+  timeout: 30000, // 30 seconds
+  retries: 3,
+  retryDelay: 1000, // 1 second
+};
+
+// Enhanced fetch with timeout and retry
+async function enhancedFetch(
+  url: string, 
+  options: RequestInit = {}, 
+  config: RequestConfig = DEFAULT_CONFIG
+): Promise<Response> {
+  const { timeout = DEFAULT_CONFIG.timeout!, retries = DEFAULT_CONFIG.retries!, retryDelay = DEFAULT_CONFIG.retryDelay! } = config;
+
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+      const response = await fetch(url, {
+        ...options,
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      // If successful or client error (don't retry client errors)
+      if (response.ok || (response.status >= 400 && response.status < 500)) {
+        return response;
+      }
+
+      // Server error - retry
+      if (attempt < retries) {
+        await delay(retryDelay * Math.pow(2, attempt)); // Exponential backoff
+        continue;
+      }
+
+      throw new APIError(
+        `HTTP ${response.status}: ${response.statusText}`,
+        response.status,
+        'HTTP_ERROR'
+      );
+    } catch (error) {
+      if (error instanceof APIError) {
+        throw error;
+      }
+
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        if (attempt < retries) {
+          await delay(retryDelay * Math.pow(2, attempt));
+          continue;
+        }
+        throw new APIError('Request timeout', 0, 'TIMEOUT');
+      }
+
+      if (attempt < retries) {
+        await delay(retryDelay * Math.pow(2, attempt));
+        continue;
+      }
+
+      throw new APIError(
+        error instanceof Error ? error.message : 'Unknown error',
+        0,
+        'NETWORK_ERROR'
+      );
+    }
+  }
+
+  throw new APIError('Max retries exceeded', 0, 'MAX_RETRIES');
+}
+
+// Helper function for delays
+function delay(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// Enhanced response handler
+async function handleResponse<T>(response: Response): Promise<T> {
+  if (!response.ok) {
+    let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+    let errorDetails: any = undefined;
+
+    try {
+      const errorBody = await response.json();
+      if (errorBody.error) {
+        errorMessage = errorBody.error;
+      }
+      if (errorBody.message) {
+        errorMessage = errorBody.message;
+      }
+      errorDetails = errorBody;
+    } catch {
+      // If parsing JSON fails, use default error message
+    }
+
+    throw new APIError(errorMessage, response.status, 'API_ERROR', errorDetails);
+  }
+
+  try {
+    return await response.json();
+  } catch (error) {
+    throw new APIError('Invalid JSON response', response.status, 'PARSE_ERROR');
+  }
+}
+
+export { APIError };
+
 export const apiClient = {
   // File listing
   async listDirectory(
@@ -26,16 +154,16 @@ export const apiClient = {
         params.set("limit", pagination.limit.toString());
     }
 
-    const response = await fetch(`${API_BASE_URL}/api/fs/list?${params}`);
-    return response.json();
+    const response = await enhancedFetch(`${API_BASE_URL}/api/fs/list?${params}`);
+    return handleResponse(response);
   },
 
   // File read
   async readFile(path: string) {
-    const response = await fetch(
+    const response = await enhancedFetch(
       `${API_BASE_URL}/api/fs/read?path=${encodeURIComponent(path)}`
     );
-    return response.json();
+    return handleResponse(response);
   },
 
   // File write
@@ -58,11 +186,11 @@ export const apiClient = {
       new Blob([content], { type: "text/plain;charset=utf-8" }),
       name
     );
-    const response = await fetch(`${API_BASE_URL}/api/fs/upload-chunk`, {
+    const response = await enhancedFetch(`${API_BASE_URL}/api/fs/upload-chunk`, {
       method: "POST",
       body: form,
     });
-    return response.json();
+    return handleResponse(response);
   },
 
   // File create
@@ -81,11 +209,11 @@ export const apiClient = {
     form.append("totalChunks", "1");
     const blob = new Blob([content], { type: "application/octet-stream" });
     form.append("chunk", blob, name);
-    const response = await fetch(`${API_BASE_URL}/api/fs/upload-chunk`, {
+    const response = await enhancedFetch(`${API_BASE_URL}/api/fs/upload-chunk`, {
       method: "POST",
       body: form,
     });
-    return response.json();
+    return handleResponse(response);
   },
 
   // File upload
@@ -97,49 +225,49 @@ export const apiClient = {
       formData.append("files", files[i]);
     }
 
-    const response = await fetch(`${API_BASE_URL}/api/fs/upload`, {
+    const response = await enhancedFetch(`${API_BASE_URL}/api/fs/upload`, {
       method: "POST",
       body: formData,
     });
-    return response.json();
+    return handleResponse(response);
   },
 
   // File operations
   async copyFile(source: string, destination: string) {
-    const response = await fetch(`${API_BASE_URL}/api/fs/copy`, {
+    const response = await enhancedFetch(`${API_BASE_URL}/api/fs/copy`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ source, destination }),
     });
-    return response.json();
+    return handleResponse(response);
   },
 
   async moveFile(source: string, destination: string) {
-    const response = await fetch(`${API_BASE_URL}/api/fs/move`, {
+    const response = await enhancedFetch(`${API_BASE_URL}/api/fs/move`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ source, destination }),
     });
-    return response.json();
+    return handleResponse(response);
   },
 
   async deleteFile(path: string) {
     // Use POST for broad compatibility
-    const response = await fetch(`${API_BASE_URL}/api/fs/delete`, {
+    const response = await enhancedFetch(`${API_BASE_URL}/api/fs/delete`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ path }),
     });
-    return response.json();
+    return handleResponse(response);
   },
 
   async createDirectory(path: string, name: string) {
-    const response = await fetch(`${API_BASE_URL}/api/fs/mkdir`, {
+    const response = await enhancedFetch(`${API_BASE_URL}/api/fs/mkdir`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ path, name }),
     });
-    return response.json();
+    return handleResponse(response);
   },
 
   // Download - Use nginx direct serving for better performance
@@ -151,7 +279,7 @@ export const apiClient = {
   },
 
   async downloadMultiple(files: string[]) {
-    const response = await fetch(`${API_BASE_URL}/api/fs/download-multiple`, {
+    const response = await enhancedFetch(`${API_BASE_URL}/api/fs/download-multiple`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ files }),
@@ -173,21 +301,21 @@ export const apiClient = {
     theme?: string;
     viewMode?: string;
   }) {
-    const response = await fetch(`${API_BASE_URL}/api/fs/share/create`, {
+    const response = await enhancedFetch(`${API_BASE_URL}/api/fs/share/create`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(shareData),
     });
-    return response.json();
+    return handleResponse(response);
   },
 
   async getShare(shareId: string) {
-    const response = await fetch(`${API_BASE_URL}/api/fs/share/${shareId}`);
-    return response.json();
+    const response = await enhancedFetch(`${API_BASE_URL}/api/fs/share/${shareId}`);
+    return handleResponse(response);
   },
 
   async accessShare(shareId: string, password?: string) {
-    const response = await fetch(
+    const response = await enhancedFetch(
       `${API_BASE_URL}/api/fs/share/${shareId}/access`,
       {
         method: "POST",
@@ -195,7 +323,7 @@ export const apiClient = {
         body: JSON.stringify({ password }),
       }
     );
-    return response.json();
+    return handleResponse(response);
   },
 
   getShareDownloadUrl(shareId: string) {
@@ -204,7 +332,13 @@ export const apiClient = {
 
   // Health check
   async healthCheck() {
-    const response = await fetch(`${API_BASE_URL}/health`);
-    return response.json();
+    const response = await enhancedFetch(`${API_BASE_URL}/health`);
+    return handleResponse(response);
+  },
+  
+  // Get metrics
+  async getMetrics() {
+    const response = await enhancedFetch(`${API_BASE_URL}/metrics`);
+    return handleResponse(response);
   },
 };

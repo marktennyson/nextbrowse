@@ -4,56 +4,139 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    # Build on the local Docker host's platform
-    # Remove or customize if building on different architecture
+      args:
+        - BUILDKIT_INLINE_CACHE=1
+    image: nextbrowse-backend:latest
+    container_name: nextbrowse-backend
     volumes:
       - ${ROOT_PATH:-./data}:/app/static:rw
     environment:
       - ROOT_PATH=/app/static
       - PORT=9932
+      - ENVIRONMENT=production
       - NEXT_PUBLIC_BASE_URL=${NEXT_PUBLIC_BASE_URL:-http://localhost:2929}
+      - MAX_FILE_SIZE=${MAX_FILE_SIZE:-10737418240}
+      - MAX_UPLOAD_SIZE=${MAX_UPLOAD_SIZE:-53687091200}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-*}
+      - GIN_MODE=release
     expose:
       - "9932"
     restart: unless-stopped
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "wget",
-          "--no-verbose",
-          "--tries=1",
-          "--spider",
-          "http://localhost:9932/health",
-        ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=100m
+    # Health check disabled for scratch-based image
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.0'
+        reservations:
+          memory: 128M
+          cpus: '0.25'
+    labels:
+      - "com.nextbrowse.service=backend"
+      - "com.nextbrowse.version=1.0"
 
   # Next.js Frontend Service
   nextjs:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        - BUILDKIT_INLINE_CACHE=1
+    image: nextbrowse-frontend:latest
+    container_name: nextbrowse-frontend
     environment:
       - NODE_ENV=production
+      - ENVIRONMENT=production
+      - NEXT_TELEMETRY_DISABLED=1
       - NEXT_PUBLIC_BASE_URL=${NEXT_PUBLIC_BASE_URL:-http://localhost:2929}
       - NEXT_PUBLIC_GO_API_URL=${NEXT_PUBLIC_GO_API_URL:-}
+      - PORT=3000
+      - HOSTNAME=0.0.0.0
     expose:
       - "3000"
     depends_on:
       - go-backend
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=50m
+      - /tmp/.next:rw,noexec,nosuid,size=50m
+    healthcheck:
+      test: ["CMD-SHELL", "timeout 5 bash -c '</dev/tcp/localhost/3000' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+        reservations:
+          memory: 64M
+          cpus: '0.1'
+    labels:
+      - "com.nextbrowse.service=frontend"
+      - "com.nextbrowse.version=1.0"
 
   # Nginx Reverse Proxy
   nginx:
     image: nginx:stable-alpine
+    container_name: nextbrowse-nginx
     ports:
       - "${PORT:-2929}:80"
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
       - ${ROOT_PATH:-./data}:/app/static:rw
+      - nginx_cache:/var/cache/nginx
+      - nginx_logs:/var/log/nginx
     depends_on:
       - nextjs
       - go-backend
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /var/run:rw,noexec,nosuid,size=10m
+      - /tmp:rw,noexec,nosuid,size=10m
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: '0.5'
+        reservations:
+          memory: 32M
+          cpus: '0.1'
+    labels:
+      - "com.nextbrowse.service=proxy"
+      - "com.nextbrowse.version=1.0"
+
+# Named volumes for better data management
+volumes:
+  nginx_cache:
+    driver: local
+  nginx_logs:
+    driver: local
+
+# Network configuration for better isolation
+networks:
+  default:
+    name: nextbrowse-network
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
