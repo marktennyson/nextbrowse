@@ -9,6 +9,8 @@
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions
+install_docker.sh
+logs/
 
 # testing
 /coverage
@@ -39,3 +41,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Go binaries (platform-specific - ignore these)
+backend/nextbrowse-backend-macos
+backend/nextbrowse-backend-windows.exe
+
+# Keep the Linux binary for Docker (nextbrowse-backend) - this should be committed

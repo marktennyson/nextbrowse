@@ -17,7 +17,7 @@ func main() {
 
 	// CORS configuration
 	cfg := cors.Config{
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowMethods:     []string{"GET", "HEAD", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
 		AllowCredentials: true,
 		// Dynamically allow any origin (nginx serves same-origin, but this also covers LAN IP access)
@@ -37,10 +37,6 @@ func main() {
 	{
 		fs.GET("/list", handlers.ListDirectory)
 		fs.GET("/read", handlers.ReadFile)
-		fs.POST("/upload", handlers.UploadFiles)
-		fs.POST("/upload-chunk", handlers.UploadChunk)
-		fs.POST("/upload-status", handlers.UploadStatus)
-		fs.POST("/upload-cancel", handlers.CancelUpload)
 		fs.POST("/copy", handlers.CopyFile)
 		fs.POST("/move", handlers.MoveFile)
 		fs.POST("/mkdir", handlers.CreateDirectory)
@@ -56,15 +52,30 @@ func main() {
 		fs.GET("/share/:shareId/download", handlers.DownloadShare)
 	}
 
+	// TUS 1.0.0 Resumable File Upload endpoints
+	tus := r.Group("/api/tus")
+	{
+		tus.OPTIONS("/files", handlers.TusOptionsHandler)    // TUS discovery
+		tus.POST("/files", handlers.TusPostHandler)          // Create upload
+		tus.HEAD("/files/:id", handlers.TusHeadHandler)      // Get upload status  
+		tus.PATCH("/files/:id", handlers.TusPatchHandler)    // Upload chunks
+		tus.DELETE("/files/:id", handlers.TusDeleteHandler)  // Cancel upload
+		tus.GET("/config", handlers.GetTusConfig)            // Get TUS configuration
+	}
+
+
 	// Health check
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})
+	})
+	r.HEAD("/health", func(c *gin.Context) {
+		c.Status(200)
 	})
 
 	// Start server
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "8080"
+		port = "9932"
 	}
 
 	log.Printf("Starting Go backend server on port %s", port)

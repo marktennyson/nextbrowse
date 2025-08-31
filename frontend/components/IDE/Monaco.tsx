@@ -138,6 +138,7 @@ export default function Monaco({
     <Editor
       height="100%"
       language={language}
+      path={path}
       value={value}
       onChange={onChange}
       theme="vs-dark-custom"
