@@ -6,7 +6,10 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
+	"sync"
+	"syscall"
 
 	"github.com/gin-gonic/gin"
 
@@ -251,8 +254,8 @@ func DeleteFile(c *gin.Context) {
 		return
 	}
 
-	// Perform delete operation
-	err = os.RemoveAll(safePath)
+	// Perform fast delete operation
+	err = fastDelete(safePath)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"ok":    false,
@@ -444,4 +447,131 @@ func ReadFile(c *gin.Context) {
 		Size:    fileInfo.Size(),
 		Mtime:   fileInfo.ModTime().Unix(),
 	})
+}
+
+// fastDelete implements an optimized delete operation for large files and directories
+func fastDelete(path string) error {
+	info, err := os.Lstat(path)
+	if err != nil {
+		return err
+	}
+
+	// For regular files, use direct unlink for maximum speed
+	if !info.IsDir() {
+		return os.Remove(path)
+	}
+
+	// For directories, use parallel deletion strategy
+	return fastDeleteDir(path)
+}
+
+// fastDeleteDir uses parallel workers to delete directory contents quickly
+func fastDeleteDir(dirPath string) error {
+	// First, try to remove the directory directly (works if empty)
+	if err := os.Remove(dirPath); err == nil {
+		return nil
+	}
+
+	// Get number of CPU cores for optimal parallelism
+	numWorkers := min(runtime.NumCPU(), 8) // Cap at 8 workers to avoid overwhelming the filesystem
+
+	// Channel for work items (paths to delete)
+	workChan := make(chan string, numWorkers*2)
+	
+	// Error channel to collect any errors
+	errChan := make(chan error, numWorkers)
+	
+	// WaitGroup to wait for all workers to complete
+	var wg sync.WaitGroup
+
+	// Start worker goroutines
+	for range numWorkers {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for path := range workChan {
+				if err := deleteWorker(path); err != nil {
+					select {
+					case errChan <- err:
+					default: // Don't block if error channel is full
+					}
+				}
+			}
+		}()
+	}
+
+	// Walk directory tree and send work to workers
+	err := filepath.Walk(dirPath, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		
+		// Skip the root directory itself (we'll delete it last)
+		if path == dirPath {
+			return nil
+		}
+		
+		// Send path to workers
+		select {
+		case workChan <- path:
+		case <-errChan:
+			// Stop if we encounter an error
+			return <-errChan
+		}
+		
+		return nil
+	})
+
+	// Close work channel and wait for workers to complete
+	close(workChan)
+	wg.Wait()
+	close(errChan)
+
+	// Check for any errors from workers
+	if len(errChan) > 0 {
+		return <-errChan
+	}
+
+	// Check for walk errors
+	if err != nil {
+		return err
+	}
+
+	// Finally, remove the now-empty directory
+	return os.Remove(dirPath)
+}
+
+// deleteWorker handles deletion of individual files/directories
+func deleteWorker(path string) error {
+	info, err := os.Lstat(path)
+	if err != nil {
+		// File might already be deleted by another worker or process
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return err
+	}
+
+	if info.IsDir() {
+		// For directories, try direct removal first (works if empty)
+		if err := os.Remove(path); err == nil {
+			return nil
+		}
+		// If directory is not empty, let the walker handle its contents
+		return nil
+	}
+
+	// For files, use unlink syscall for maximum performance
+	return unlinkFile(path)
+}
+
+// unlinkFile uses the fastest available method to delete a file
+func unlinkFile(path string) error {
+	// Try direct syscall first for maximum performance
+	if err := syscall.Unlink(path); err == nil {
+		return nil
+	}
+	
+	// Fallback to standard library
+	return os.Remove(path)
 }

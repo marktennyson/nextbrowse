@@ -51,7 +51,9 @@ export function useFileOperations({
     if (itemsToDownload.length === 1) {
       const itemName = itemsToDownload[0];
       const itemPath = `${currentPath}/${itemName}`.replace(/\/+/g, "/");
-      const downloadUrl = `/api/fs/download?path=${encodeURIComponent(itemPath)}`;
+      const downloadUrl = `/api/fs/download?path=${encodeURIComponent(
+        itemPath
+      )}`;
 
       const link = document.createElement("a");
       link.href = downloadUrl;
@@ -61,19 +63,19 @@ export function useFileOperations({
       link.click();
       document.body.removeChild(link);
     } else {
-      const zipName = `${allItems.length > 1 ? "selected-items" : "download"}.zip`;
+      const zipName = `${
+        allItems.length > 1 ? "selected-items" : "download"
+      }.zip`;
 
       try {
+        const files = itemsToDownload.map((itemName) =>
+          `${currentPath}/${itemName}`.replace(/\/+/g, "/")
+        );
+
         const response = await fetch("/api/fs/download-multiple", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            items: itemsToDownload.map((itemName) => ({
-              name: itemName,
-              path: `${currentPath}/${itemName}`.replace(/\/+/g, "/"),
-            })),
-            basePath: currentPath,
-          }),
+          body: JSON.stringify({ files }),
         });
 
         if (response.ok) {
@@ -87,7 +89,7 @@ export function useFileOperations({
           document.body.removeChild(link);
           window.URL.revokeObjectURL(url);
         } else {
-          throw new Error("Failed to create download archive");
+          await handleErrorResponse(response);
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : "Download failed");
@@ -119,7 +121,9 @@ export function useFileOperations({
         refreshDirectory();
         clearSelection();
       } catch (err) {
-        setError(err instanceof Error ? err.message : `${mode} operation failed`);
+        setError(
+          err instanceof Error ? err.message : `${mode} operation failed`
+        );
       }
     },
     [currentPath, refreshDirectory, clearSelection, setError]
@@ -128,11 +132,11 @@ export function useFileOperations({
   const createFolder = useCallback(
     async (folderName: string) => {
       try {
-        const folderPath = `${currentPath}/${folderName}`.replace(/\/+/g, "/");
         const response = await fetch("/api/fs/mkdir", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ path: folderPath }),
+          // Go backend expects parent path + name
+          body: JSON.stringify({ path: currentPath, name: folderName }),
         });
 
         if (!response.ok) {
@@ -150,11 +154,23 @@ export function useFileOperations({
   const createFile = useCallback(
     async (fileName: string) => {
       try {
-        const filePath = `${currentPath}/${fileName}`.replace(/\/+/g, "/");
-        const response = await fetch("/api/fs/create", {
+        // Create an empty file via single-chunk upload (Go backend supports this path)
+        const formData = new FormData();
+        formData.append("path", currentPath);
+        formData.append("fileName", fileName);
+        formData.append(
+          "fileId",
+          `manual_${Date.now()}_${Math.random().toString(36).slice(2)}`
+        );
+        formData.append("chunkIndex", "0");
+        formData.append("totalChunks", "1");
+        // Empty chunk to create 0-byte file
+        const emptyBlob = new Blob([], { type: "application/octet-stream" });
+        formData.append("chunk", emptyBlob, fileName);
+
+        const response = await fetch("/api/fs/upload-chunk", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ path: filePath, content: "" }),
+          body: formData,
         });
 
         if (!response.ok) {
@@ -222,8 +238,10 @@ export function useFileOperations({
   const downloadItem = useCallback(
     (item: FileItem) => {
       const itemPath = `${currentPath}/${item.name}`.replace(/\/+/g, "/");
-      const downloadUrl = `/api/fs/download?path=${encodeURIComponent(itemPath)}`;
-      
+      const downloadUrl = `/api/fs/download?path=${encodeURIComponent(
+        itemPath
+      )}`;
+
       const link = document.createElement("a");
       link.href = downloadUrl;
       link.download = item.type === "dir" ? `${item.name}.zip` : item.name;

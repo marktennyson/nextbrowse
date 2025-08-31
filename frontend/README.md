@@ -24,7 +24,7 @@ npm run build
 Create a `.env.local` file with:
 ```bash
 NEXT_PUBLIC_BASE_URL=http://localhost:3000
-NEXT_PUBLIC_GO_API_URL=http://localhost:8080
+NEXT_PUBLIC_GO_API_URL=http://localhost:9932
 ```
 
 ## Project Structure

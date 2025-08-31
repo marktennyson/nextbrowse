@@ -1,6 +1,10 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import type {
+  MouseEvent as ReactMouseEvent,
+  FormEvent as ReactFormEvent,
+} from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import type { editor } from "monaco-editor";
@@ -8,12 +12,10 @@ import {
   ArrowLeftIcon,
   MagnifyingGlassIcon,
   FolderIcon,
-  CommandLineIcon,
   BugAntIcon,
   PlayIcon,
   PuzzlePieceIcon,
   ChevronRightIcon,
-  ChevronDownIcon,
 } from "@heroicons/react/24/outline";
 
 import Monaco from "./Monaco";
@@ -105,7 +107,7 @@ export default function IDE({
     const parts = activeFile.split("/").filter(Boolean);
     const out: { label: string; path: string }[] = [];
     let acc = activeFile.startsWith("/") ? "" : ".";
-    parts.forEach((p) => {
+    parts.forEach((p: string) => {
       acc = acc ? `${acc}/${p}` : p;
       out.push({ label: p, path: acc });
     });
@@ -160,7 +162,10 @@ export default function IDE({
           mtime: data.mtime,
         };
 
-        setOpenFiles((prev) => ({ ...prev, [path]: newFile }));
+        setOpenFiles((prev: Record<string, OpenFile>) => ({
+          ...prev,
+          [path]: newFile,
+        }));
         setActiveFile(path);
         toast.success(`Opened ${path.split("/").pop()}`);
       } catch (error) {
@@ -183,21 +188,28 @@ export default function IDE({
       if (!file) return;
 
       try {
-        const res = await fetch("/api/fs/write", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ path, content: file.content }),
-        });
-        const data = await res.json();
-        if (!data.ok) throw new Error(data.error || "Failed to save file");
+        // Save via unified API client (handles base URL/proxy)
+        const res = await apiClient.writeFile(path, file.content);
+        if (!(res as any)?.ok) {
+          const msg =
+            (res as any)?.error || (res as any)?.message || "Save failed";
+          throw new Error(msg);
+        }
 
-        setOpenFiles((prev) => ({
+        // Refresh metadata (size/mtime) by reading file
+        const info = (await apiClient.readFile(path)) as {
+          ok?: boolean;
+          size?: number;
+          mtime?: number;
+        };
+
+        setOpenFiles((prev: Record<string, OpenFile>) => ({
           ...prev,
           [path]: {
             ...file,
             originalContent: file.content,
-            size: data.size,
-            mtime: data.mtime,
+            size: typeof info?.size === "number" ? info.size : file.size,
+            mtime: typeof info?.mtime === "number" ? info.mtime : Date.now(),
           },
         }));
         if (activeFile === path) {
@@ -216,7 +228,7 @@ export default function IDE({
   );
 
   const saveAll = useCallback(async () => {
-    const dirty = Object.values(openFiles).filter(
+    const dirty = (Object.values(openFiles) as OpenFile[]).filter(
       (f) => f.content !== f.originalContent
     );
     if (dirty.length === 0) {
@@ -244,7 +256,7 @@ export default function IDE({
           return;
         }
       }
-      setOpenFiles((prev) => {
+      setOpenFiles((prev: Record<string, OpenFile>) => {
         const next = { ...prev };
         delete next[path];
         return next;
@@ -260,7 +272,7 @@ export default function IDE({
   );
 
   const closeOthers = useCallback((path: string) => {
-    setOpenFiles((prev) => {
+    setOpenFiles((prev: Record<string, OpenFile>) => {
       const keep = prev[path];
       return keep ? { [path]: keep } : prev;
     });
@@ -278,7 +290,7 @@ export default function IDE({
   }, [openFiles]);
 
   const updateFileContent = useCallback((path: string, content: string) => {
-    setOpenFiles((prev) => {
+    setOpenFiles((prev: Record<string, OpenFile>) => {
       const file = prev[path];
       if (!file) return prev;
       return { ...prev, [path]: { ...file, content } };
@@ -400,7 +412,7 @@ export default function IDE({
 
   // Sidebar resize
   const onSidebarMouseDown = useCallback(
-    (e: React.MouseEvent) => {
+    (e: ReactMouseEvent) => {
       if (sidebarCollapsed) return;
       resizingSidebarRef.current = true;
       const startX = e.clientX;
@@ -436,7 +448,7 @@ export default function IDE({
 
   // Bottom panel resize
   const onBottomMouseDown = useCallback(
-    (e: React.MouseEvent) => {
+    (e: ReactMouseEvent) => {
       resizingBottomRef.current = true;
       const startY = e.clientY;
       const startH = bottomHeight;
@@ -460,7 +472,7 @@ export default function IDE({
 
   // Quick Open submit
   const handleQuickOpenSubmit = useCallback(
-    (e: React.FormEvent) => {
+    (e: ReactFormEvent) => {
       e.preventDefault();
       const value = quickOpenValue.trim();
       if (!value) {
@@ -497,15 +509,19 @@ export default function IDE({
                   {i > 0 && (
                     <ChevronRightIcon className="h-3 w-3 mx-1 text-gray-500" />
                   )}
-                  <button
-                    onClick={() => loadFile(b.path)}
-                    className={`hover:text-gray-200 ${
-                      i === breadcrumbs.length - 1 ? "text-gray-200" : ""
-                    }`}
-                    title={b.path}
-                  >
-                    {b.label}
-                  </button>
+                  {i === breadcrumbs.length - 1 ? (
+                    <button
+                      onClick={() => loadFile(b.path)}
+                      className={`hover:text-gray-200 text-gray-200`}
+                      title={b.path}
+                    >
+                      {b.label}
+                    </button>
+                  ) : (
+                    <span className="text-gray-400" title={b.path}>
+                      {b.label}
+                    </span>
+                  )}
                 </div>
               ))}
             </div>
@@ -528,7 +544,7 @@ export default function IDE({
       {/* Main */}
       <div className="flex-1 flex min-h-0">
         {/* Activity Bar */}
-        <div className="w-12 bg-gray-850 bg-gray-800 border-r border-gray-700 flex flex-col items-center py-2 gap-2">
+        <div className="w-12 bg-gray-800 border-r border-gray-700 flex flex-col items-center py-2 gap-2">
           <button
             title="Explorer (Ctrl+B)"
             onClick={() => {

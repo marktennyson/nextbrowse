@@ -2,6 +2,9 @@
 
 A modern, feature-rich file browser built with Next.js 15, designed to provide a web interface for browsing and managing files on your local machine through Docker and nginx.
 
+- End‑User Guide: see [docs/USER_GUIDE.md](docs/USER_GUIDE.md) for step‑by‑step deployment and usage.
+- Current limits: “Create file” and in‑browser save aren’t supported yet; folder download from share links isn’t implemented.
+
 ![NextBrowse](https://via.placeholder.com/800x400?text=NextBrowse+File+Manager)
 
 ## ✨ Features
@@ -21,6 +24,7 @@ A modern, feature-rich file browser built with Next.js 15, designed to provide a
 
 - Docker and Docker Compose installed
 - A local directory you want to browse
+- Go 1.22+ (for building the backend binary)
 
 ### 1. Clone the Repository
 
@@ -29,7 +33,16 @@ git clone <repository-url>
 cd nextbrowse
 ```
 
-### 2. Configure Environment
+### 2. Build the Backend Binary
+
+```bash
+# Build the Go backend for Docker
+cd backend
+./build.sh
+cd ..
+```
+
+### 3. Configure Environment
 
 ```bash
 # Copy the environment template
@@ -40,17 +53,20 @@ cp .env.example .env
 nano .env
 ```
 
-### 3. Run with Docker Compose
+### 4. Run with Docker Compose
 
 ```bash
-# Build and start the services
+# Option 1: Use the automated deploy script
+./deploy.sh
+
+# Option 2: Manual Docker Compose
 docker-compose up -d
 
 # View logs (optional)
 docker-compose logs -f
 ```
 
-### 4. Access the Application
+### 5. Access the Application
 
 Open your browser and navigate to:
 
