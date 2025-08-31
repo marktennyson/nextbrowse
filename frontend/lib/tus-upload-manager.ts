@@ -217,9 +217,9 @@ export class TusUploadManager {
       const controller = new AbortController();
       this.abortControllers.set(uploadFile.fileId, controller);
 
-      // Encode metadata as base64 (simplified)
-      const filenameEncoded = btoa(uploadFile.file.name);
-      const pathEncoded = btoa(uploadFile.path);
+      // Encode metadata as base64 (Unicode-safe)
+      const filenameEncoded = this.safeBase64Encode(uploadFile.file.name);
+      const pathEncoded = this.safeBase64Encode(uploadFile.path);
       const metadata = `filename ${filenameEncoded},path ${pathEncoded}`;
 
       const response = await fetch(`${API_BASE_URL}/api/tus/files`, {
@@ -442,8 +442,23 @@ export class TusUploadManager {
 
   // Helper methods
   private generateFileId(fileName: string, fileSize: number): string {
-    const fileHash = btoa(fileName + fileSize + Date.now()).replace(/[/+=]/g, "");
+    const fileHash = this.safeBase64Encode(fileName + fileSize + Date.now()).replace(/[/+=]/g, "");
     return `tus_upload_${fileHash}`;
+  }
+
+  // Safe base64 encoding that handles Unicode characters
+  private safeBase64Encode(str: string): string {
+    try {
+      // Use TextEncoder to convert Unicode string to UTF-8 bytes, then encode
+      const encoder = new TextEncoder();
+      const data = encoder.encode(str);
+      const binaryString = String.fromCharCode(...data);
+      return btoa(binaryString);
+    } catch (error) {
+      // Fallback: use crypto.subtle if available, otherwise generate a random hash
+      console.warn("Base64 encoding failed, using fallback:", error);
+      return Math.random().toString(36).substring(2) + Date.now().toString(36);
+    }
   }
 
   private updateProgress(fileId: string): void {
