@@ -15,9 +15,14 @@ logs/
 # testing
 /coverage
 
-# next.js
-/.next/
+# next.js build output (allow prebuilt runtime artifacts)
 /out/
+# Ignore all .next by default, but keep standalone and static when present
+/.next/*
+!frontend/.next/
+frontend/.next/*
+!frontend/.next/standalone/
+!frontend/.next/static/
 
 # production
 /build
@@ -32,8 +37,9 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
-.env*
+# env files
+.env
+!.env.example
 
 # vercel
 .vercel
@@ -42,8 +48,8 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# Go binaries (platform-specific - ignore these)
+# Go binaries (platform-specific)
 backend/nextbrowse-backend-macos
 backend/nextbrowse-backend-windows.exe
-
-# Keep the Linux binary for Docker (nextbrowse-backend) - this should be committed
+# Keep Linux binary (committed)
+!backend/nextbrowse-backend

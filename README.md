@@ -1,6 +1,6 @@
 # NextBrowse 📁
 
-A modern, feature-rich file browser built with Next.js 15, designed to provide a web interface for browsing and managing files on your local machine through Docker and nginx.
+A modern, feature-rich file browser built with Next.js 15 and Go, designed to provide a web interface for browsing and managing files on your local machine through Docker and nginx.
 
 - End‑User Guide: see [docs/USER_GUIDE.md](docs/USER_GUIDE.md) for step‑by‑step deployment and usage.
 - Current limits: “Create file” and in‑browser save aren’t supported yet; folder download from share links isn’t implemented.
@@ -18,13 +18,14 @@ A modern, feature-rich file browser built with Next.js 15, designed to provide a
 - **🐳 Docker Ready**: Easy deployment with Docker Compose
 - **🔐 Secure**: Path traversal protection and security headers
 
-## 🚀 Quick Start with Docker
+## 🚀 Quick Start (Zero local build)
 
 ### Prerequisites
 
 - Docker and Docker Compose installed
 - A local directory you want to browse
-- Go 1.22+ (for building the backend binary)
+- Docker (Desktop on macOS/Windows; engine + compose on Linux)
+- Bash shell (macOS/Linux; Windows via Git Bash or WSL)
 
 ### 1. Clone the Repository
 
@@ -33,16 +34,7 @@ git clone <repository-url>
 cd nextbrowse
 ```
 
-### 2. Build the Backend Binary
-
-```bash
-# Build the Go backend for Docker
-cd backend
-./build.sh
-cd ..
-```
-
-### 3. Configure Environment
+### 2. Configure Environment
 
 ```bash
 # Copy the environment template
@@ -53,17 +45,12 @@ cp .env.example .env
 nano .env
 ```
 
-### 4. Run with Docker Compose
+### 3. Install and Start
 
 ```bash
-# Option 1: Use the automated deploy script
-./deploy.sh
-
-# Option 2: Manual Docker Compose
-docker-compose up -d
-
-# View logs (optional)
-docker-compose logs -f
+./install.sh    # performs pre-checks and can start the stack
+# Later restarts
+./restart.sh
 ```
 
 ### 5. Access the Application
@@ -125,13 +112,10 @@ For local development without Docker:
 # Install dependencies
 npm install
 
-# Copy environment template
-cp .env.example .env.local
-
-# Configure for local development
-echo "ROOT_DIR=/path/to/your/directory" > .env.local
-echo "PUBLIC_FILES_BASE=/files" >> .env.local
-echo "NEXT_PUBLIC_BASE_URL=http://localhost:3000" >> .env.local
+# Copy environment template and edit
+cp .env.example .env
+sed -i '' 's|ROOT_PATH=/path/to/your/local/directory|ROOT_PATH=/absolute/path/you/want|' .env  # macOS (BSD sed)
+# Linux users: sed -i 's|ROOT_PATH=/path/to/your/local/directory|ROOT_PATH=/absolute/path/you/want|' .env
 
 # Start development server
 npm run dev
@@ -140,22 +124,11 @@ npm run dev
 ## 📋 Docker Commands
 
 ```bash
-# Start services
-docker-compose up -d
-
-# Stop services
-docker-compose down
-
-# View logs
-docker-compose logs -f
-
-# Rebuild after code changes
-docker-compose build --no-cache
-
-# Update to latest version
-git pull
-docker-compose build --no-cache
-docker-compose up -d
+docker compose up -d           # start
+docker compose down            # stop
+docker compose logs -f         # logs
+docker compose build --no-cache  # rebuild images
+git pull && docker compose up -d # update and restart
 ```
 
 ## 🏗️ Architecture
@@ -233,22 +206,33 @@ chmod -R 755 /path/to/your/directory
 
 ```bash
 # View all logs
-docker-compose logs
+docker compose logs
 
 # View only nginx logs
-docker-compose logs nginx
+docker compose logs nginx
 
 # View only app logs
-docker-compose logs nextjs
+docker compose logs nextjs
 ```
+
+## 📦 Prebuilt mode (no client builds)
+
+To minimize CPU usage on user machines, the repository can include prebuilt artifacts:
+
+- Backend: `backend/nextbrowse-backend` (Linux binary, committed)
+- Frontend: `frontend/.next/standalone` and `frontend/.next/static` (committed)
+
+When these are present, our scripts automatically use `docker-compose.prebuilt.yml` to run without building images locally. Otherwise, Docker will build images from source.
+
+Maintainers: see the notes in CONTRIBUTING.md for how to create and update prebuilt artifacts.
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions are welcome! Please read CONTRIBUTING.md and open a Pull Request.
 
 ## ⭐ Support
 

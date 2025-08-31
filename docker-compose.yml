@@ -4,12 +4,14 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
+    # Build on the local Docker host's platform
+    # Remove or customize if building on different architecture
     volumes:
       - ${ROOT_PATH:-./data}:/app/static:rw
     environment:
       - ROOT_PATH=/app/static
       - PORT=9932
-      - NEXT_PUBLIC_BASE_URL=http://localhost:2929
+      - NEXT_PUBLIC_BASE_URL=${NEXT_PUBLIC_BASE_URL:-http://localhost:2929}
     expose:
       - "9932"
     restart: unless-stopped

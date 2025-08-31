@@ -162,9 +162,8 @@ EOF
   fi
 
   log_info "🔧 Making scripts executable (if present)..."
-  [ -f start.sh ] && chmod +x start.sh
-  [ -f stop.sh ] && chmod +x stop.sh
-  [ -f start-go-backend.sh ] && chmod +x start-go-backend.sh
+  if [ -f restart.sh ]; then chmod +x restart.sh; fi
+  if [ -f start-go-backend.sh ]; then chmod +x start-go-backend.sh; fi
 }
 
 # ------------ Compose validation ------------
@@ -194,28 +193,39 @@ start_stack() {
 
   export COMPOSE_DOCKER_CLI_BUILD=1
 
-  log_info "🔨 Building containers..."
-  dc build
+  # Prefer prebuilt frontend artifacts when present locally
+  COMPOSE_FILES=( -f docker-compose.yml )
+  if [ -d frontend/.next/standalone ] && [ -f frontend/public/favicon.ico ] && [ -f docker-compose.prebuilt.yml ]; then
+    log_info "📦 Using prebuilt frontend artifacts (docker-compose.prebuilt.yml)"
+    COMPOSE_FILES+=( -f docker-compose.prebuilt.yml )
+  else
+    log_info "🔨 Building containers..."
+    dc build
+  fi
 
   log_info "🚀 Starting services..."
-  dc up -d --remove-orphans
+  # shellcheck disable=SC2068
+  dc ${COMPOSE_FILES[@]} up -d --remove-orphans
 
   log_info "⏳ Waiting for services to start..."
   sleep 5
 
   local max_attempts=12
   local attempt=1
+  local healthy=0
   log_info "🏥 Checking service health at http://localhost:${PORT} ..."
   while [ $attempt -le $max_attempts ]; do
     if command_exists curl; then
       http_code="$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:${PORT}" || true)"
       if [[ "$http_code" =~ ^(200|301|302)$ ]]; then
         log_success "Services are healthy! (HTTP $http_code)"
+        healthy=1
         break
       fi
     else
-      if dc ps 2>/dev/null | grep -q "Up"; then
+      if dc ps 2>/dev/null | grep -Eiq "Up|running"; then
         log_success "Services appear to be running."
+        healthy=1
         break
       fi
     fi
@@ -224,19 +234,20 @@ start_stack() {
     ((attempt++))
   done
 
-  if [ $attempt -gt $max_attempts ]; then
+  if [ $healthy -ne 1 ]; then
     log_error "Services failed to start properly"
     log_info "Showing last 50 lines of logs:"
-    dc logs --tail=50 || true
+  # shellcheck disable=SC2068
+  dc ${COMPOSE_FILES[@]} logs --tail=50 || true
     echo
     log_info "💡 Try these commands:"
-    echo -e "   • Restart: ${YELLOW}./start.sh${NC}"
+    echo -e "   • Restart: ${YELLOW}./restart.sh${NC}"
     echo -e "   • View logs: ${YELLOW}${COMPOSE_CMD} logs -f${NC}"
-    echo -e "   • Stop: ${YELLOW}./stop.sh${NC}"
+    echo -e "   • Restart: ${YELLOW}./restart.sh${NC}"
     exit 1
   fi
 
-  if dc ps 2>/dev/null | grep -q "Up"; then
+  if dc ps 2>/dev/null | grep -Eiq "Up|running"; then
     log_success "🎉 NextBrowse started successfully!"
     echo
     log_info "📱 Access NextBrowse:"
@@ -246,16 +257,15 @@ start_stack() {
     echo
     log_info "📂 Browsing Directory: ${YELLOW}${ROOT_PATH}${NC}"
     echo
-    log_info "💡 Management Commands:"
-    echo -e "   • Stop: ${YELLOW}./stop.sh${NC}"
-    echo -e "   • View logs: ${YELLOW}${COMPOSE_CMD} logs -f${NC}"
-    echo -e "   • Restart: ${YELLOW}./start.sh${NC}"
+  log_info "💡 Management Commands:"
+  echo -e "   • Restart: ${YELLOW}./restart.sh${NC}"
+  echo -e "   • View logs: ${YELLOW}${COMPOSE_CMD} logs -f${NC}"
     echo
     log_success "🚀 NextBrowse is now running and ready to use!"
     echo -e "${GREEN}📝 Log file: ${LOG_FILE}${NC}"
   else
     log_error "Services failed to start"
-    echo -e "${YELLOW}Check logs with: ${COMPOSE_CMD} logs${NC}"
+  echo -e "${YELLOW}Check logs with: ${COMPOSE_CMD} logs${NC}"
     exit 1
   fi
 }
@@ -285,8 +295,7 @@ fi
 if [[ "$REPLY" =~ ^[Nn]$ ]]; then
   echo
   log_info "📋 To start NextBrowse later:"
-  echo -e "   • Start: ${YELLOW}./start.sh${NC}"
-  echo -e "   • Stop: ${YELLOW}./stop.sh${NC}"
+  echo -e "   • Restart: ${YELLOW}./restart.sh${NC}"
   echo -e "   • View logs: ${YELLOW}${COMPOSE_CMD} logs -f${NC}"
   echo
   log_success "NextBrowse is ready to use. Log: ${LOG_FILE}"
