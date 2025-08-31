@@ -1,16 +1,16 @@
 "use client";
 import React, { useRef, useState } from 'react';
-import { UploadManager } from '@/lib/upload-manager';
+import { TusUploadManager } from '@/lib/tus-upload-manager';
 
 export default function UploadTester() {
-  const uploadManagerRef = useRef<UploadManager | null>(null);
-  const [testMode, setTestMode] = useState(true);
+  const uploadManagerRef = useRef<TusUploadManager | null>(null);
+  const [testMode] = useState(false); // TUS doesn't have test mode
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Initialize upload manager
   React.useEffect(() => {
-    uploadManagerRef.current = new UploadManager();
-    uploadManagerRef.current.setTestMode(testMode);
+    uploadManagerRef.current = new TusUploadManager();
+    // TUS manager doesn't have test mode - it always does real uploads
   }, [testMode]);
 
   const handleFileSelect = async () => {
@@ -76,15 +76,9 @@ export default function UploadTester() {
       
       <div className="space-y-4">
         <div className="flex items-center space-x-2">
-          <label className="flex items-center">
-            <input
-              type="checkbox"
-              checked={testMode}
-              onChange={(e) => setTestMode(e.target.checked)}
-              className="mr-2"
-            />
-            Test Mode (simulated uploads)
-          </label>
+          <span className="text-sm text-gray-600 dark:text-gray-400">
+            TUS Upload Manager (Real uploads to backend)
+          </span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -131,7 +125,7 @@ export default function UploadTester() {
         <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-700 rounded">
           <h5 className="font-medium mb-2">Instructions:</h5>
           <ul className="text-sm space-y-1">
-            <li>• Enable Test Mode to simulate uploads without server calls</li>
+            <li>• TUS uploads are always real - no simulation mode</li>
             <li>• Try pausing, resuming, and canceling uploads</li>
             <li>• Watch console logs for debugging information</li>
             <li>• Test with actual files by selecting them above</li>

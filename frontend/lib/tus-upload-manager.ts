@@ -1,5 +1,6 @@
-// TUS 1.0.0 Compliant Upload Manager
-const API_BASE_URL = process.env.NEXT_PUBLIC_GO_API_URL || "";
+// TUS 1.0.0 Compliant Upload Manager  
+// Use empty string for relative URLs since nginx will proxy to Go backend
+const API_BASE_URL = "";
 
 export interface TusUploadProgress {
   fileId: string;
@@ -42,7 +43,14 @@ export class TusUploadManager {
   private queue: string[] = [];
   private chunkSize = 8 * 1024 * 1024; // 8MB default
   private abortControllers: Map<string, AbortController> = new Map();
-  private tusConfig: any = null;
+  private tusConfig: {
+    version?: string;
+    maxSize?: number;
+    extensions?: string[];
+    chunkSize?: number;
+    maxConcurrentUploads?: number;
+    resumable?: boolean;
+  } | null = null;
 
   constructor() {
     this.loadTusConfig().catch(console.warn);
@@ -346,6 +354,30 @@ export class TusUploadManager {
       this.notifyProgress(fileId);
       this.processQueue();
     }
+  }
+
+  // Retry upload but set replace flag so backend will overwrite existing file
+  public retryWithReplace(fileId: string): void {
+    const uploadFile = this.uploads.get(fileId);
+    const progress = this.progress.get(fileId);
+    if (!uploadFile || !progress) return;
+
+    // Reset upload state and retry
+    uploadFile.uploadUrl = null;
+    uploadFile.offset = 0;
+    uploadFile.retryCount = 0;
+    
+    progress.status = "pending";
+    progress.error = undefined;
+    progress.uploadedBytes = 0;
+    progress.progress = 0;
+    
+    if (!this.queue.includes(fileId)) {
+      this.queue.unshift(fileId);
+    }
+    
+    this.notifyProgress(fileId);
+    this.processQueue();
   }
 
   public async cancelUpload(fileId: string): Promise<void> {

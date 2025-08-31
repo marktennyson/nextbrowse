@@ -7,7 +7,7 @@ import {
   ClockIcon,
   ArrowDownTrayIcon,
 } from "@heroicons/react/24/outline";
-import { UploadManager, UploadProgress } from "@/lib/upload-manager";
+import { TusUploadManager, TusUploadProgress } from "@/lib/tus-upload-manager";
 import FileConflictDialog from "@/components/FileConflictDialog";
 
 interface UploadDropzoneProps {
@@ -21,18 +21,18 @@ export default function UploadDropzone({
   targetPath,
   children,
 }: UploadDropzoneProps) {
-  const [uploads, setUploads] = useState<UploadProgress[]>([]);
+  const [uploads, setUploads] = useState<TusUploadProgress[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [conflictDialog, setConflictDialog] = useState<{
     fileName: string;
     onReplace: () => void;
     onCancel: () => void;
   } | null>(null);
-  const uploadManagerRef = useRef<UploadManager | null>(null);
+  const uploadManagerRef = useRef<TusUploadManager | null>(null);
 
   // Initialize upload manager
   useEffect(() => {
-    uploadManagerRef.current = new UploadManager();
+    uploadManagerRef.current = new TusUploadManager();
 
     uploadManagerRef.current.onGlobalProgress((allProgress) => {
       setUploads(allProgress);
@@ -112,7 +112,7 @@ export default function UploadDropzone({
     return uploadManagerRef.current?.formatTime(seconds) || "--:--";
   };
 
-  const getStatusIcon = (status: UploadProgress["status"]) => {
+  const getStatusIcon = (status: TusUploadProgress["status"]) => {
     switch (status) {
       case "completed":
         return <ArrowDownTrayIcon className="h-4 w-4 text-green-500" />;
