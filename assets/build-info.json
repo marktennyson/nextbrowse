@@ -1,0 +1,17 @@
+{
+    "build_date": "2025-08-31T15:38:49Z",
+    "git_commit": "61c14617327236e2b68d5d7977a6c947e662f1e4",
+    "git_branch": "modernaization",
+    "architectures": [
+  "linux/amd64",
+  "linux/arm64"
+],
+    "docker_images": {
+        "backend": [
+  "nextbrowse-backend-arm64.tar.gz"
+],
+        "frontend": [
+  "nextbrowse-frontend-arm64.tar.gz"
+]
+    }
+}

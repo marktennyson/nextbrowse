@@ -1,0 +1,89 @@
+#!/bin/bash
+
+# Post-checkout hook for NextBrowse
+# Automatically extracts build artifacts after checkout/pull
+
+set -e
+
+# Colors for output
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+
+log() {
+    echo -e "${BLUE}[POST-CHECKOUT]${NC} $*"
+}
+
+# Get hook arguments
+prev_head="$1"
+new_head="$2"
+branch_checkout="$3"
+
+# Check if we're on the production-ready branch
+BRANCH=$(git branch --show-current)
+if [ "$BRANCH" != "production-ready" ]; then
+    exit 0  # Skip on non-production branches
+fi
+
+log "Running post-checkout asset extraction..."
+
+PROJECT_ROOT="$(git rev-parse --show-toplevel)"
+ASSETS_DIR="$PROJECT_ROOT/assets"
+
+# Check if unrar is available
+if ! command -v unrar &> /dev/null; then
+    echo -e "${YELLOW}[WARNING]${NC} unrar command not found. Skipping asset extraction."
+    echo "Install unrar with: brew install unrar"
+    exit 0
+fi
+
+# Function to extract if archive exists and is newer than extracted content
+extract_if_newer() {
+    local archive="$1"
+    local target_dir="$2"
+    local description="$3"
+    
+    if [ -f "$archive" ]; then
+        # Check if we need to extract (archive is newer than target or target doesn't exist)
+        local should_extract=false
+        
+        if [ ! -d "$target_dir" ]; then
+            should_extract=true
+        elif [ "$archive" -nt "$target_dir" ]; then
+            should_extract=true
+        fi
+        
+        if [ "$should_extract" = true ]; then
+            log "Extracting $description..."
+            mkdir -p "$(dirname "$target_dir")"
+            cd "$(dirname "$target_dir")"
+            unrar x -o+ "$archive" "$(basename "$target_dir")/"
+            cd "$PROJECT_ROOT"
+            echo -e "${GREEN}[SUCCESS]${NC} Extracted $description"
+        fi
+    fi
+}
+
+# Extract Go binaries
+extract_if_newer \
+    "$ASSETS_DIR/go-binaries.rar" \
+    "$PROJECT_ROOT/backend" \
+    "Go binaries"
+
+# Extract Next.js build
+extract_if_newer \
+    "$ASSETS_DIR/nextjs-build.rar" \
+    "$PROJECT_ROOT/frontend/.next" \
+    "Next.js build"
+
+# Show build info if available
+if [ -f "$ASSETS_DIR/build-info.json" ]; then
+    log "Build information:"
+    if command -v jq &> /dev/null; then
+        jq -r '"  Build Date: " + .build_date + "\n  Git Commit: " + .git_commit' "$ASSETS_DIR/build-info.json"
+    else
+        grep -E '"(build_date|git_commit)"' "$ASSETS_DIR/build-info.json" | sed 's/.*: "/  /g' | sed 's/",*$//g'
+    fi
+fi
+
+log "Post-checkout asset extraction completed"

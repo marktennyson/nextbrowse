@@ -1,0 +1,135 @@
+services:
+  # Go Backend Service - Multi-architecture support
+  go-backend:
+    image: nextbrowse-backend:${ARCH:-amd64}
+    container_name: nextbrowse-backend
+    volumes:
+      - ${ROOT_PATH:-./data}:/app/static:rw
+    environment:
+      - ROOT_PATH=/app/static
+      - PORT=9932
+      - ENVIRONMENT=production
+      - NEXT_PUBLIC_BASE_URL=${NEXT_PUBLIC_BASE_URL:-http://localhost:2929}
+      - MAX_FILE_SIZE=${MAX_FILE_SIZE:-10737418240}
+      - MAX_UPLOAD_SIZE=${MAX_UPLOAD_SIZE:-53687091200}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-*}
+      - GIN_MODE=release
+    expose:
+      - "9932"
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=100m
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "1.0"
+        reservations:
+          memory: 128M
+          cpus: "0.25"
+    labels:
+      - "com.nextbrowse.service=backend"
+      - "com.nextbrowse.version=1.0"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget --no-verbose --tries=1 --spider http://localhost:9932/api/health || exit 1",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Next.js Frontend Service - Multi-architecture support
+  nextjs:
+    image: nextbrowse-frontend:${ARCH:-amd64}
+    container_name: nextbrowse-frontend
+    environment:
+      - NODE_ENV=production
+      - NEXT_TELEMETRY_DISABLED=1
+      - PORT=3000
+      - HOSTNAME=0.0.0.0
+      - NEXT_PUBLIC_BASE_URL=${NEXT_PUBLIC_BASE_URL:-http://localhost:2929}
+      - NEXT_PUBLIC_GO_API_URL=${NEXT_PUBLIC_GO_API_URL:-}
+    expose:
+      - "3000"
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: "2.0"
+        reservations:
+          memory: 256M
+          cpus: "0.5"
+    labels:
+      - "com.nextbrowse.service=frontend"
+      - "com.nextbrowse.version=1.0"
+    depends_on:
+      go-backend:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: nextbrowse-nginx
+    ports:
+      - "${PORT:-2929}:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ${ROOT_PATH:-./data}:/usr/share/nginx/html/files:ro
+    environment:
+      - NGINX_HOST=localhost
+      - NGINX_PORT=80
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.5"
+        reservations:
+          memory: 64M
+          cpus: "0.1"
+    labels:
+      - "com.nextbrowse.service=proxy"
+      - "com.nextbrowse.version=1.0"
+    depends_on:
+      nextjs:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget --no-verbose --tries=1 --spider http://localhost/ || exit 1",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  default:
+    name: nextbrowse-network
+    driver: bridge
+
+volumes:
+  nginx_cache:
+    driver: local
